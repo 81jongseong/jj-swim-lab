@@ -69,12 +69,13 @@
  * ```
  */
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui';
+import { Progress } from '@/components/ui';
 
 interface PerformanceMetrics {
   fcp: number; // First Contentful Paint
@@ -117,7 +118,7 @@ export default function PerformanceMonitor({ refreshInterval = 30000 }: Performa
       setLastUpdate(new Date());
     } catch (err) {
       setError('성능 메트릭 수집에 실패했습니다.');
-      console.error('Performance monitoring error:', err);
+      logger.error('Performance monitoring error:', err);
     } finally {
       setIsLoading(false);
     }

@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
+// 동적 렌더링 강제 (prerendering 비활성화)
+export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
-import { CardGrid } from '@/components/common';
+import { Button } from '@/components/ui';
+import { CardGrid, LoadingState, PageHeader, ErrorState } from '@/components/common';
+import { logger } from '@/lib/logger';
 
 /**
  * 🧠 퀴즈 페이지
@@ -121,10 +125,10 @@ export default function QuizPage() {
             return;
           }
         } else if (response.status === 401) {
-          console.warn('인증 실패, 임시 데이터 사용');
+          logger.warn('인증 실패, 임시 데이터 사용');
         }
       } catch (apiError) {
-        console.warn('API 호출 실패, 임시 데이터 사용:', apiError);
+        logger.warn('API 호출 실패, 임시 데이터 사용:', apiError);
       }
       
       // API 실패 시 임시 데이터 사용
@@ -176,7 +180,7 @@ export default function QuizPage() {
       
       setQuizzes(mockQuizzes);
     } catch (error) {
-      console.error('퀴즈 조회 실패:', error);
+      logger.error('퀴즈 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -309,12 +313,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -324,21 +323,11 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">로그인 필요</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  <p>퀴즈를 풀기 위해서는 로그인이 필요합니다.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ErrorState 
+            message="퀴즈를 풀기 위해서는 로그인이 필요합니다."
+            onRetry={() => window.location.href = '/auth/login'}
+            retryText="로그인하기"
+          />
         </div>
       </div>
     );
@@ -517,12 +506,13 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <PageHeader
+          title="🧠 수영 퀴즈"
+          description="수영에 대한 지식을 테스트하고 실력을 향상시켜보세요."
+          className="mb-8"
+        />
+        
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">🧠 수영 퀴즈</h1>
-          <p className="mt-2 text-gray-600">
-            수영에 대한 지식을 테스트하고 실력을 향상시켜보세요.
-          </p>
-          
           {/* 랜덤 모드 선택 */}
           <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
             <label className="flex items-center space-x-3 cursor-pointer">

@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -21,7 +22,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
 import { StatCard } from '../../../components/StatCard';
-import { Button } from '../../../components/Button';
+import { CardGrid, PageHeader } from '@/components/common';
+import { Button } from '@/components/ui';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
 
 const DEBUG = false;
@@ -102,7 +104,7 @@ const CenterAdminDashboard: React.FC = () => {
   useEffect(() => {
     const loadCenterData = async () => {
       try {
-        if (DEBUG) console.log('📊 센터 데이터 로드 중...');
+        if (DEBUG) logger.info('📊 센터 데이터 로드 중...');
         
         const response = await fetch('http://localhost:5000/api/center-admin/dashboard', {
           headers: {
@@ -112,7 +114,7 @@ const CenterAdminDashboard: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
-          if (DEBUG) console.log('📡 대시보드 API 응답:', data);
+          if (DEBUG) logger.info('📡 대시보드 API 응답:', data);
           
           if (data.success && data.data) {
             setStats({
@@ -123,10 +125,10 @@ const CenterAdminDashboard: React.FC = () => {
               pendingApprovals: data.data.pendingApprovals || 0,
               todayBookings: data.data.todayBookings || 0
             });
-            if (DEBUG) console.log('✅ 대시보드 통계 로드 성공:', data.data);
+            if (DEBUG) logger.info('✅ 대시보드 통계 로드 성공:', data.data);
           }
         } else {
-          if (DEBUG) console.error('❌ 대시보드 API 호출 실패:', response.status);
+          if (DEBUG) logger.error('❌ 대시보드 API 호출 실패:', response.status);
           setStats({
             totalMembers: 0,
             activeInstructors: 0,
@@ -137,7 +139,7 @@ const CenterAdminDashboard: React.FC = () => {
           });
         }
       } catch (error) {
-        if (DEBUG) console.error('❌ 센터 데이터 로드 실패:', error);
+        if (DEBUG) logger.error('❌ 센터 데이터 로드 실패:', error);
         setStats({
           totalMembers: 0,
           activeInstructors: 0,
@@ -173,13 +175,14 @@ const CenterAdminDashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">센터 관리자 대시보드</h1>
-        <p className="text-gray-600 mt-2">안녕하세요, {user?.name || '센터관리자'}님! 센터 현황을 확인해보세요.</p>
-      </div>
+      <PageHeader
+        title="센터 관리자 대시보드"
+        description={`안녕하세요, ${user?.name || '센터관리자'}님! 센터 현황을 확인해보세요.`}
+        className="mb-8"
+      />
 
       {/* 주요 통계 */}
-      <div className="grid grid-cols-1 min-[600px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           title="총 회원"
           value={`${stats.totalMembers}명`}
@@ -204,7 +207,7 @@ const CenterAdminDashboard: React.FC = () => {
           icon="💰"
           color="orange"
         />
-      </div>
+      </CardGrid>
 
       {/* 추가 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -297,7 +300,7 @@ const CenterAdminDashboard: React.FC = () => {
           <CardDescription>자주 사용하는 기능들에 빠르게 접근하세요.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardGrid gap={4}>
             <Button 
               variant="outline"
               className="h-24 flex flex-col items-center justify-center space-y-2 hover:bg-blue-50 hover:border-blue-300 transition-all"
@@ -363,7 +366,7 @@ const CenterAdminDashboard: React.FC = () => {
               </div>
               <span className="text-sm font-medium">리포트</span>
             </Button>
-          </div>
+          </CardGrid>
         </CardContent>
       </Card>
     </div>
@@ -371,3 +374,4 @@ const CenterAdminDashboard: React.FC = () => {
 };
 
 export default CenterAdminDashboard;
+

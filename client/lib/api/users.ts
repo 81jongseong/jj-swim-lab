@@ -9,44 +9,19 @@
  * - 센터 사용자 목록 조회
  * - 사용자 상태 관리
  * - 사용자 정보 수정
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/user-management/page.tsx
+ * - client/app/center-admin/members/page.tsx
  */
+
+import { logger } from '@/lib/logger';
+import type { User } from '@/types/user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-// 타입 정의
-export interface User {
-  _id: string;
-  userId: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  
-  // 학생 정보
-  studentInfo?: {
-    swimmingLevel: string;
-    enrolledCenters: string[];
-    emergencyContact?: string;
-    healthConditions?: string[];
-  };
-  
-  // 강사 정보
-  instructorInfo?: {
-    instructorLevel: string;
-    assignedCenters: string[];
-    specialties: string[];
-    experience: number;
-  };
-  
-  // 센터 관리자 정보
-  centerAdminInfo?: {
-    managedCenters: string[];
-    centerName?: string;
-  };
-}
+// 통합 타입 사용 - 더 이상 여기서 User 인터페이스를 정의하지 않음
+export type { User };
 
 // 헬퍼 함수
 const getAuthHeaders = () => {
@@ -94,7 +69,7 @@ export const getCenterUsers = async (params: {
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('센터 사용자 조회 실패:', error);
+    logger.error('센터 사용자 조회 실패:', error);
     throw error;
   }
 };
@@ -112,7 +87,7 @@ export const updateUserStatus = async (userId: string, isActive: boolean): Promi
       throw new Error(`HTTP error! status: ${response.status}`);
     }
   } catch (error) {
-    console.error('사용자 상태 변경 실패:', error);
+    logger.error('사용자 상태 변경 실패:', error);
     throw error;
   }
 };
@@ -133,7 +108,7 @@ export const updateUser = async (userId: string, userData: Partial<User>): Promi
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('사용자 정보 수정 실패:', error);
+    logger.error('사용자 정보 수정 실패:', error);
     throw error;
   }
 };

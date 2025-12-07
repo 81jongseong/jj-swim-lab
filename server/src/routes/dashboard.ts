@@ -15,14 +15,16 @@ import { Booking } from '../models/Booking';
 import { Payment } from '../models/Payment';
 import { Approval } from '../models/Approval';
 import { logInfo, logError, logWarn, logDebug } from '../utils/logger';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * GET /api/dashboard/stats
  * 대시보드 통계 데이터를 반환합니다
+ * 관리자 권한 필요
  */
-router.get('/stats', async (req: Request, res: Response) => {
+router.get('/stats', authMiddleware, requireRole(['superAdmin', 'centerAdmin']), async (req: Request, res: Response) => {
   try {
     console.log('📊 대시보드 통계 요청 받음');
 

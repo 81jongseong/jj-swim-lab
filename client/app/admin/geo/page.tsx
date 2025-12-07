@@ -55,10 +55,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { LoadingState, PageHeader } from '@/components/common';
 
 // 동적 import로 SSR 문제 방지
 let maplibregl: any;
@@ -142,9 +144,9 @@ export default function GeoDistributionPage() {
         // CSS 로딩
         await import('maplibre-gl/dist/maplibre-gl.css' as any);
         
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        logger.info('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
       } catch (error) {
-        console.error('❌ 라이브러리 로딩 오류:', error);
+        logger.error('❌ 라이브러리 로딩 오류:', error);
       }
     };
 
@@ -193,7 +195,7 @@ export default function GeoDistributionPage() {
 
     // 지도 로딩 완료 이벤트
     map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
+      logger.info('🗺️ VWorld 지도 로딩 완료');
       
       // H3 헥사곤 레이어 생성
       const h3Layer = new MapboxLayer({
@@ -285,12 +287,12 @@ export default function GeoDistributionPage() {
       if (result.success) {
         setHeatmapData(result.data.cells);
         setMetadata(result.data.metadata);
-        console.log('✅ 회원 분포도 데이터 로딩 완료:', result.data.cells.length, '셀');
+        logger.info('✅ 회원 분포도 데이터 로딩 완료:', result.data.cells.length, '셀');
       } else {
-        console.error('❌ 데이터 로딩 실패:', result.error);
+        logger.error('❌ 데이터 로딩 실패:', result.error);
       }
     } catch (error) {
-      console.error('❌ API 호출 오류:', error);
+      logger.error('❌ API 호출 오류:', error);
     } finally {
       setLoadingData(false);
     }
@@ -344,17 +346,14 @@ export default function GeoDistributionPage() {
     link.click();
     document.body.removeChild(link);
     
-    console.log('📊 CSV 내보내기 완료');
+    logger.info('📊 CSV 내보내기 완료');
   };
 
   // 로딩 상태
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -373,15 +372,10 @@ export default function GeoDistributionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      {/* 헤더 */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🗺️ 회원 분포도 (프라이버시 안전 H3 집계)
-        </h1>
-        <p className="text-gray-600">
-          VWorld 지도 + deck.gl H3HexagonLayer 기반 회원 분포 시각화
-        </p>
-      </div>
+      <PageHeader
+        title="🗺️ 회원 분포도 (프라이버시 안전 H3 집계)"
+        description="VWorld 지도 + deck.gl H3HexagonLayer 기반 회원 분포 시각화"
+      />
 
       {/* 필터 패널 */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-4">

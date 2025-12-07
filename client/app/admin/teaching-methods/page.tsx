@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { LoadingState, PageHeader, ConfirmModal } from '@/components/common';
+import { Button } from '@/components/ui';
 import TeachingMethodCard from '@/components/TeachingMethodCard';
 
 // 지연 로딩 컴포넌트
@@ -81,6 +83,19 @@ export default function TeachingMethodsPage() {
   const [newLevelName, setNewLevelName] = useState('');
   const [newLevelKoreanName, setNewLevelKoreanName] = useState('');
   
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
+  
   // 실제 데이터에서 카테고리와 레벨 추출
   const actualCategories = React.useMemo(() => {
     const categories = new Set(methods.map(m => m.category).filter(Boolean));
@@ -119,15 +134,15 @@ export default function TeachingMethodsPage() {
   // 강습법 데이터 가져오기
   const fetchTeachingMethods = async () => {
     try {
-      console.log('🔍 강습법 데이터 가져오기 시작...');
+      logger.info('🔍 강습법 데이터 가져오기 시작...');
       
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('❌ 토큰이 없습니다.');
+        logger.info('❌ 토큰이 없습니다.');
         return;
       }
       
-      console.log('🔑 JWT 토큰 확인됨');
+      logger.info('🔑 JWT 토큰 확인됨');
 
       const response = await fetch('/api/teaching-methods', {
         method: 'GET',
@@ -137,11 +152,11 @@ export default function TeachingMethodsPage() {
         },
       });
 
-      console.log('📡 서버 응답 상태:', response.status, response.statusText);
+      logger.info('📡 서버 응답 상태:', response.status, response.statusText);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 서버 응답 데이터:', data);
+        logger.info('📊 서버 응답 데이터:', data);
         
         const transformedMethods = data.data.map((method: any) => ({
           ...method,
@@ -150,32 +165,32 @@ export default function TeachingMethodsPage() {
           checklist: method.checklist || []
         }));
         
-        console.log('🔄 변환된 강습법 데이터:', transformedMethods);
-        console.log('📊 API 응답 데이터 개수:', transformedMethods.length);
-        console.log('📋 첫 번째 강습법 샘플:', transformedMethods[0]);
-        console.log('📋 마지막 강습법 샘플:', transformedMethods[transformedMethods.length - 1]);
+        logger.info('🔄 변환된 강습법 데이터:', transformedMethods);
+        logger.info('📊 API 응답 데이터 개수:', transformedMethods.length);
+        logger.info('📋 첫 번째 강습법 샘플:', transformedMethods[0]);
+        logger.info('📋 마지막 강습법 샘플:', transformedMethods[transformedMethods.length - 1]);
         
         setMethods(transformedMethods);
-        console.log('✅ 73개의 강습법을 성공적으로 로드했습니다.');
-        console.log('🔍 methods 상태 업데이트 완료');
+        logger.info('✅ 73개의 강습법을 성공적으로 로드했습니다.');
+        logger.info('🔍 methods 상태 업데이트 완료');
       } else {
-        console.error('❌ 강습법 데이터 가져오기 실패:', response.status);
+        logger.error('❌ 강습법 데이터 가져오기 실패:', response.status);
       }
     } catch (error) {
-      console.error('❌ 강습법 데이터 가져오기 오류:', error);
+      logger.error('❌ 강습법 데이터 가져오기 오류:', error);
     } finally {
       setLoading(false);
-      console.log('🏁 강습법 데이터 로딩 완료');
+      logger.info('🏁 강습법 데이터 로딩 완료');
     }
   };
 
   // 필터링 및 검색
   const filterMethods = () => {
-    console.log('🔍 filterMethods 실행:', { totalMethods: methods.length, searchTerm, selectedLevel });
+    logger.info('🔍 filterMethods 실행:', { totalMethods: methods.length, searchTerm, selectedLevel });
     
     let filtered = methods;
     
-    console.log('📋 methods 배열 내용:', methods);
+    logger.info('📋 methods 배열 내용:', methods);
 
     // 검색어 필터링
     if (searchTerm) {
@@ -199,7 +214,7 @@ export default function TeachingMethodsPage() {
     // 정렬 (order 기준)
     filtered = filtered.sort((a, b) => a.order - b.order);
 
-    console.log('🔍 필터링 및 정렬 결과:', { filteredCount: filtered.length, filteredMethods: filtered });
+    logger.info('🔍 필터링 및 정렬 결과:', { filteredCount: filtered.length, filteredMethods: filtered });
     setFilteredMethods(filtered);
   };
 
@@ -239,12 +254,7 @@ export default function TeachingMethodsPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );
@@ -253,17 +263,14 @@ export default function TeachingMethodsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isCenterAdmin ? '강습법 조회' : '강습법 관리'}
-          </h1>
-          <p className="mt-2 text-gray-600">
-            {isCenterAdmin 
+        <PageHeader
+          title={isCenterAdmin ? '강습법 조회' : '강습법 관리'}
+          description={
+            isCenterAdmin 
               ? '수영 강습에 필요한 다양한 강습법을 조회하고 레벨별로 분류할 수 있습니다. 수정 및 삭제는 최고관리자만 가능합니다.'
               : '수영 강습에 필요한 다양한 강습법을 관리하고 체계화합니다.'
-            }
-          </p>
-        </div>
+          }
+        />
 
         {/* 통계 섹션 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -457,7 +464,7 @@ export default function TeachingMethodsPage() {
             )}
             <button
               onClick={() => {
-                console.log('🔄 수동 새로고침 시작...');
+                logger.info('🔄 수동 새로고침 시작...');
                 fetchTeachingMethods();
               }}
               className="px-6 py-2 border border-blue-500 text-blue-700 hover:bg-blue-50 shadow-md rounded-md"
@@ -491,28 +498,36 @@ export default function TeachingMethodsPage() {
                 setIsFormOpen(true);
               } : undefined}
               onDelete={!isCenterAdmin ? async () => {
-                if (confirm('정말로 이 강습법을 삭제하시겠습니까?')) {
-                  try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`/api/teaching-methods/${method._id}`, {
-                      method: 'DELETE',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                      },
-                    });
+                setConfirmModal({
+                  isOpen: true,
+                  message: '정말로 이 강습법을 삭제하시겠습니까?',
+                  variant: 'danger',
+                  onConfirm: async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`/api/teaching-methods/${method._id}`, {
+                        method: 'DELETE',
+                        headers: {
+                          'Authorization': `Bearer ${token}`,
+                          'Content-Type': 'application/json',
+                        },
+                      });
 
-                    if (response.ok) {
-                      alert('강습법이 삭제되었습니다.');
-                      fetchTeachingMethods();
-                    } else {
-                      alert('삭제에 실패했습니다.');
+                      if (response.ok) {
+                        alert('강습법이 삭제되었습니다.');
+                        fetchTeachingMethods();
+                        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                      } else {
+                        alert('삭제에 실패했습니다.');
+                        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                      }
+                    } catch (error) {
+                      logger.error('삭제 오류:', error);
+                      alert('삭제 중 오류가 발생했습니다.');
+                      setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
                     }
-                  } catch (error) {
-                    console.error('삭제 오류:', error);
-                    alert('삭제 중 오류가 발생했습니다.');
                   }
-                }
+                });
               } : undefined}
               showActions={true}
             />
@@ -549,12 +564,12 @@ export default function TeachingMethodsPage() {
             </div>
             <ExcelUploader
               onUploadSuccess={(data) => {
-                console.log('Excel 업로드 성공:', data);
+                logger.info('Excel 업로드 성공:', data);
                 setIsExcelUploaderOpen(false);
                 fetchTeachingMethods();
               }}
               onUploadError={(error) => {
-                console.error('Excel 업로드 오류:', error);
+                logger.error('Excel 업로드 오류:', error);
               }}
             />
           </div>
@@ -700,11 +715,11 @@ export default function TeachingMethodsPage() {
                   fetchTeachingMethods();
                 } else {
                   const errorData = await response.json();
-                  console.error('수정 오류 응답:', errorData);
+                  logger.error('수정 오류 응답:', errorData);
                   alert(`수정에 실패했습니다: ${errorData.error || '알 수 없는 오류'}`);
                 }
               } catch (error) {
-                console.error('수정 오류:', error);
+                logger.error('수정 오류:', error);
                 alert('수정 중 오류가 발생했습니다.');
               }
             }} className="space-y-4">
@@ -1049,6 +1064,17 @@ export default function TeachingMethodsPage() {
         </div>
       )}
 
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

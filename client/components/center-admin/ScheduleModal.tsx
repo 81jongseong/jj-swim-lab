@@ -12,6 +12,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Users, Settings, AlertCircle } from 'lucide-react';
@@ -151,7 +152,7 @@ export default function ScheduleModal({
         setInstructors(instructorList);
       }
     } catch (error) {
-      console.error('강사 목록 로드 실패:', error);
+      logger.error('강사 목록 로드 실패:', error);
     }
   };
 

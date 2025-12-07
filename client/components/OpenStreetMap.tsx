@@ -10,6 +10,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 
@@ -84,7 +85,7 @@ export default function OpenStreetMap({
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
         cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        cssLink.onload = () => console.log('✅ Leaflet CSS 로드 완료');
+        cssLink.onload = () => logger.info('✅ Leaflet CSS 로드 완료');
         document.head.appendChild(cssLink);
 
         // JavaScript 로드
@@ -95,19 +96,19 @@ export default function OpenStreetMap({
         script.onload = () => {
           setTimeout(() => {
             if (window.L && window.L.map) {
-              console.log('✅ Leaflet JS 로드 완료');
+              logger.info('✅ Leaflet JS 로드 완료');
               setIsLoaded(true);
             }
           }, 100);
         };
         
         script.onerror = () => {
-          console.error('❌ Leaflet 로드 실패');
+          logger.error('❌ Leaflet 로드 실패');
         };
         
         document.head.appendChild(script);
       } catch (error) {
-        console.error('❌ Leaflet 로드 중 오류:', error);
+        logger.error('❌ Leaflet 로드 중 오류:', error);
       }
     };
 
@@ -122,7 +123,7 @@ export default function OpenStreetMap({
 
     const initializeMap = () => {
       try {
-        console.log(`🗺️ 지도 초기화 시작: ${mapId.current}`);
+        logger.info(`🗺️ 지도 초기화 시작: ${mapId.current}`);
         
         const container = mapRef.current;
         if (!container || !isMounted) return;
@@ -181,14 +182,14 @@ export default function OpenStreetMap({
           try {
             mapInstance.invalidateSize(true);
           } catch (e) {
-            console.warn('지도 크기 조정 중 경고:', e);
+            logger.warn('지도 크기 조정 중 경고:', e);
           }
         }, 100);
 
-        console.log(`✅ 지도 초기화 완료: ${mapId.current}`);
+        logger.info(`✅ 지도 초기화 완료: ${mapId.current}`);
         
       } catch (error) {
-        console.error('❌ 지도 초기화 실패:', error);
+        logger.error('❌ 지도 초기화 실패:', error);
       }
     };
 
@@ -213,7 +214,7 @@ export default function OpenStreetMap({
               map.removeLayer(marker);
             }
           } catch (e) {
-            console.warn('마커 제거 중 경고:', e);
+            logger.warn('마커 제거 중 경고:', e);
           }
         });
 
@@ -255,14 +256,14 @@ export default function OpenStreetMap({
             newMarkers.push(marker);
             
           } catch (markerError) {
-            console.warn('마커 생성 중 경고:', markerError);
+            logger.warn('마커 생성 중 경고:', markerError);
           }
         });
 
         setCurrentMarkers(newMarkers);
         
       } catch (error) {
-        console.warn('마커 업데이트 중 경고:', error);
+        logger.warn('마커 업데이트 중 경고:', error);
       }
     };
 
@@ -288,7 +289,7 @@ export default function OpenStreetMap({
           }
         }, 100);
       } catch (e) {
-        console.warn('리사이즈 처리 중 경고:', e);
+        logger.warn('리사이즈 처리 중 경고:', e);
       }
     };
 
@@ -299,7 +300,7 @@ export default function OpenStreetMap({
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
-      console.log(`🧹 지도 정리: ${mapId.current}`);
+      logger.info(`🧹 지도 정리: ${mapId.current}`);
       
       try {
         // 마커 정리
@@ -309,7 +310,7 @@ export default function OpenStreetMap({
               marker.remove();
             }
           } catch (e) {
-            console.warn('마커 제거 중 경고:', e);
+            logger.warn('마커 제거 중 경고:', e);
           }
         });
 
@@ -319,7 +320,7 @@ export default function OpenStreetMap({
             map.off();
             map.remove();
           } catch (e) {
-            console.warn('지도 제거 중 경고:', e);
+            logger.warn('지도 제거 중 경고:', e);
           }
         }
 
@@ -332,7 +333,7 @@ export default function OpenStreetMap({
           container.innerHTML = '';
         }
       } catch (error) {
-        console.warn('정리 중 경고:', error);
+        logger.warn('정리 중 경고:', error);
       }
     };
   }, []); // 빈 의존성 - 언마운트 시에만 실행
@@ -377,7 +378,7 @@ export function MapControls({
       }
       onZoomIn?.();
     } catch (e) {
-      console.warn('줌인 처리 중 경고:', e);
+      logger.warn('줌인 처리 중 경고:', e);
     }
   };
 
@@ -388,7 +389,7 @@ export function MapControls({
       }
       onZoomOut?.();
     } catch (e) {
-      console.warn('줌아웃 처리 중 경고:', e);
+      logger.warn('줌아웃 처리 중 경고:', e);
     }
   };
 
@@ -399,7 +400,7 @@ export function MapControls({
       }
       onReset?.();
     } catch (e) {
-      console.warn('리셋 처리 중 경고:', e);
+      logger.warn('리셋 처리 중 경고:', e);
     }
   };
 
@@ -436,7 +437,7 @@ export function MapControls({
         }
       }
     } catch (e) {
-      console.warn('타일 레이어 변경 중 경고:', e);
+      logger.warn('타일 레이어 변경 중 경고:', e);
     }
   };
 
@@ -543,7 +544,7 @@ export function AddressSearch({
         onAddressSelect({ lat: 37.5665, lng: 126.9780 });
       }
     } catch (error) {
-      console.warn('주소 검색 중 오류:', error);
+      logger.warn('주소 검색 중 오류:', error);
     } finally {
       setIsSearching(false);
     }

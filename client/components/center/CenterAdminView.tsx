@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -68,7 +69,7 @@ export default function CenterAdminView({ centerInfo, user }: CenterAdminViewPro
         ]
       });
     } catch (error) {
-      console.error('센터 관리자 데이터 로딩 실패:', error);
+      logger.error('센터 관리자 데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }

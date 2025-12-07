@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Users, Search, Filter, Star, Award, Calendar, TrendingUp } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface StudentLevel {
   _id: string;
@@ -83,7 +85,7 @@ function StudentLevelsManagement() {
       ];
       setStudents(tempStudents);
     } catch (error) {
-      console.error('학생 레벨 데이터 로드 실패:', error);
+      logger.error('학생 레벨 데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +139,7 @@ function StudentLevelsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
@@ -145,10 +147,10 @@ function StudentLevelsManagement() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">학생 레벨 관리</h1>
-          <p className="text-gray-600 mt-2">학생들의 수영 레벨과 진도를 관리하세요</p>
-        </div>
+        <PageHeader
+          title="학생 레벨 관리"
+          description="학생들의 수영 레벨과 진도를 관리하세요"
+        />
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

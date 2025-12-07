@@ -11,6 +11,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { LoadingState } from '@/components/common';
 
 export default function InstructorScheduleRedirect() {
   const router = useRouter();
@@ -21,10 +22,7 @@ export default function InstructorScheduleRedirect() {
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">예약 관리 페이지로 이동 중...</p>
-      </div>
+      <LoadingState message="예약 관리 페이지로 이동 중..." size="md" />
     </div>
   );
 }

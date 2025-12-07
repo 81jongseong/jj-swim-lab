@@ -1,16 +1,4 @@
-/**
- * 건강정보 입력 API 엔드포인트
- * 
- * 연동되는 데이터:
- * - 회원 건강정보 저장
- * - 운동 프로그램 생성 요청
- * - 데이터베이스 저장 및 검증
- * 
- * 연동되는 파일:
- * - /swim-training-engine/ (수영 트레이닝 규칙 엔진)
- * - MongoDB 데이터베이스
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { buildPlan, type HealthInput, type PlanOutput } from '../../../../swim-training-engine/src/engine/swim-plan';
 
@@ -59,7 +47,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('건강정보 저장 오류:', error);
+    logger.error('건강정보 저장 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -94,7 +82,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('건강정보 조회 오류:', error);
+    logger.error('건강정보 조회 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

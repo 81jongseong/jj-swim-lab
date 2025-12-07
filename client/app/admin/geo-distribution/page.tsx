@@ -27,6 +27,8 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader } from '@/components/common';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -341,7 +343,7 @@ export default function GeoDistributionPage() {
 
   // 지역별 센터 매핑 초기화
   useEffect(() => {
-    console.log('🔄 regionCenters 초기화 시작');
+    logger.info('🔄 regionCenters 초기화 시작');
     
     // 실제 DB의 센터 이름 사용 (API 응답에서 가져온 센터 이름과 일치하도록)
     // 주의: 실제 DB의 센터 이름을 사용해야 함 ('JJ 수영장 강남점' 등)
@@ -628,8 +630,8 @@ export default function GeoDistributionPage() {
       '제주시': ['기타'],
       '서귀포시': ['기타']
     };
-    console.log('✅ regionCenters 초기화 완료:', Object.keys(mockRegionCenters).length, '개 지역');
-    console.log('📋 regionCenters 샘플 키:', Object.keys(mockRegionCenters).slice(0, 10));
+    logger.info('✅ regionCenters 초기화 완료:', Object.keys(mockRegionCenters).length, '개 지역');
+    logger.info('📋 regionCenters 샘플 키:', Object.keys(mockRegionCenters).slice(0, 10));
     setRegionCenters(mockRegionCenters);
   }, []);
 
@@ -651,42 +653,42 @@ export default function GeoDistributionPage() {
 
   // 선택된 지역에 따른 센터 목록 업데이트
   useEffect(() => {
-    console.log('🔍 지역 선택 변경 감지:', Array.from(selectedRegions));
-    console.log('🗺️ regionCenters 키 목록:', Object.keys(regionCenters));
-    console.log('🗺️ regionCenters 전체 데이터:', regionCenters);
+    logger.info('🔍 지역 선택 변경 감지:', Array.from(selectedRegions));
+    logger.info('🗺️ regionCenters 키 목록:', Object.keys(regionCenters));
+    logger.info('🗺️ regionCenters 전체 데이터:', regionCenters);
     
     const selectedRegionList = Array.from(selectedRegions);
     let availableCenters: string[] = [];
     
     if (selectedRegionList.length === 0) {
       availableCenters = [];
-      console.log('🚫 지역 미선택 - 센터 없음');
+      logger.info('🚫 지역 미선택 - 센터 없음');
     } else if (selectedRegionList.includes('전국')) {
       availableCenters = regionCenters['전국'] || [];
-      console.log('🌏 전국 선택 - 모든 센터:', availableCenters);
+      logger.info('🌏 전국 선택 - 모든 센터:', availableCenters);
     } else {
       // 구/군이 선택된 경우
       if (selectedRegionList.length > 0) {
         for (const region of selectedRegionList) {
-          console.log(`🔎 처리 중인 지역: "${region}"`);
+          logger.info(`🔎 처리 중인 지역: "${region}"`);
           // UnifiedRegionSelector의 지역 이름을 regionCenters 키로 변환
           const normalizedRegion = normalizeRegionName(region);
-          console.log(`   → 정규화된 지역: "${normalizedRegion}"`);
+          logger.info(`   → 정규화된 지역: "${normalizedRegion}"`);
           
           // 1. 정규화된 이름으로 찾기
           if (regionCenters[normalizedRegion]) {
-            console.log(`   ✅ ${normalizedRegion} 키로 찾음:`, regionCenters[normalizedRegion]);
+            logger.info(`   ✅ ${normalizedRegion} 키로 찾음:`, regionCenters[normalizedRegion]);
             availableCenters = [...availableCenters, ...regionCenters[normalizedRegion]];
           } 
           // 2. 원래 이름으로 찾기
           else if (regionCenters[region]) {
-            console.log(`   ✅ ${region} 키로 찾음:`, regionCenters[region]);
+            logger.info(`   ✅ ${region} 키로 찾음:`, regionCenters[region]);
             availableCenters = [...availableCenters, ...regionCenters[region]];
           } 
           // 3. 찾지 못한 경우
           else {
-            console.log(`   ❌ ${region} (${normalizedRegion})에 대한 센터 매핑이 없습니다.`);
-            console.log(`   📋 사용 가능한 키들:`, Object.keys(regionCenters).filter(k => k.includes(region) || k.includes(normalizedRegion)));
+            logger.info(`   ❌ ${region} (${normalizedRegion})에 대한 센터 매핑이 없습니다.`);
+            logger.info(`   📋 사용 가능한 키들:`, Object.keys(regionCenters).filter(k => k.includes(region) || k.includes(normalizedRegion)));
           }
         }
       }
@@ -696,7 +698,7 @@ export default function GeoDistributionPage() {
         const normalizedSido = normalizeRegionName(currentSelectedSido);
         const sidoCenters = regionCenters[normalizedSido] || regionCenters[currentSelectedSido] || [];
         if (sidoCenters.length > 0) {
-          console.log(`📍 시/도만 선택됨 - ${currentSelectedSido} (${normalizedSido}) 센터:`, sidoCenters);
+          logger.info(`📍 시/도만 선택됨 - ${currentSelectedSido} (${normalizedSido}) 센터:`, sidoCenters);
           availableCenters = sidoCenters;
         }
       }
@@ -708,10 +710,10 @@ export default function GeoDistributionPage() {
         }
       }
       availableCenters = uniqueCenters;
-      console.log('🎯 최종 사용 가능한 센터:', availableCenters);
+      logger.info('🎯 최종 사용 가능한 센터:', availableCenters);
     }
     
-    console.log('📊 센터 목록 업데이트:', availableCenters);
+    logger.info('📊 센터 목록 업데이트:', availableCenters);
     
     // ⚠️ 중요: 지역 선택 시 센터 목록만 표시하고, activeCenters는 비워둠
     // 사용자가 센터를 선택할 때까지 데이터 로딩하지 않음
@@ -745,7 +747,7 @@ export default function GeoDistributionPage() {
       setMetadata(null);
     }
     
-    console.log('✅ 센터 목록 업데이트 완료:', {
+    logger.info('✅ 센터 목록 업데이트 완료:', {
       availableCenters: availableCenters.length,
       activeCenters: activeCenters.size,
       selectedRegions: Array.from(selectedRegions)
@@ -767,47 +769,47 @@ export default function GeoDistributionPage() {
     
     // 최고관리자가 아니면 홈으로 리다이렉트
     if (user.userType !== 'superAdmin') {
-      console.warn('⚠️ 최고관리자 권한이 없습니다. 홈으로 리다이렉트합니다.');
+      logger.warn('⚠️ 최고관리자 권한이 없습니다. 홈으로 리다이렉트합니다.');
       router.push('/');
       return;
     }
     
     // 최고관리자이면 페이지에 머무름
-    console.log('✅ 최고관리자 인증 확인 완료');
+    logger.info('✅ 최고관리자 인증 확인 완료');
   }, [user, loading, router]);
 
   // 라이브러리 동적 로딩
   useEffect(() => {
     const loadLibraries = async () => {
       try {
-        console.log('📦 라이브러리 로딩 시작...');
+        logger.info('📦 라이브러리 로딩 시작...');
         
         maplibregl = (await import('maplibre-gl')).default;
-        console.log('✅ maplibre-gl 로딩 완료');
+        logger.info('✅ maplibre-gl 로딩 완료');
         
         const deckGl = await import('@deck.gl/mapbox');
-        console.log('✅ @deck.gl/mapbox 로딩 완료:', Object.keys(deckGl));
+        logger.info('✅ @deck.gl/mapbox 로딩 완료:', Object.keys(deckGl));
         
         const coreLayers = await import('@deck.gl/layers');
-        console.log('✅ @deck.gl/layers 로딩 완료:', Object.keys(coreLayers));
+        logger.info('✅ @deck.gl/layers 로딩 완료:', Object.keys(coreLayers));
 
         // Deck.gl 컴포넌트 설정
         MapboxOverlay = deckGl.MapboxOverlay;
         ScatterplotLayer = coreLayers.ScatterplotLayer;
         TextLayer = coreLayers.TextLayer;
         
-        console.log('✅ MapboxOverlay 설정:', !!MapboxOverlay);
-        console.log('✅ ScatterplotLayer 설정:', !!ScatterplotLayer);
-        console.log('✅ TextLayer 설정:', !!TextLayer);
+        logger.info('✅ MapboxOverlay 설정:', !!MapboxOverlay);
+        logger.info('✅ ScatterplotLayer 설정:', !!ScatterplotLayer);
+        logger.info('✅ TextLayer 설정:', !!TextLayer);
 
         // CSS 로딩 (타입 선언 오류 무시)
         // @ts-ignore
         await import('maplibre-gl/dist/maplibre-gl.css');
 
-        console.log('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
+        logger.info('✅ MapLibre + deck.gl 라이브러리 로딩 완료');
         setLibrariesLoaded(true);
       } catch (error) {
-        console.error('🚨 라이브러리 로딩 실패:', error);
+        logger.error('🚨 라이브러리 로딩 실패:', error);
       }
     };
 
@@ -816,7 +818,7 @@ export default function GeoDistributionPage() {
 
   // 지도 초기화
   useEffect(() => {
-    console.log('🗺️ 지도 초기화 useEffect 실행:', {
+    logger.info('🗺️ 지도 초기화 useEffect 실행:', {
       hasMapRef: !!mapRef.current,
       hasMaplibregl: !!maplibregl,
       hasMapboxOverlay: !!MapboxOverlay,
@@ -824,7 +826,7 @@ export default function GeoDistributionPage() {
     });
 
     if (!librariesLoaded || !mapRef.current || !maplibregl || !MapboxOverlay) {
-      console.log('⏳ 지도 초기화 대기 중 - 라이브러리 또는 DOM 요소 대기');
+      logger.info('⏳ 지도 초기화 대기 중 - 라이브러리 또는 DOM 요소 대기');
       return;
     }
 
@@ -886,7 +888,7 @@ export default function GeoDistributionPage() {
 
     // 지도 로딩 완료
     map.on('load', () => {
-      console.log('🗺️ VWorld 지도 로딩 완료');
+      logger.info('🗺️ VWorld 지도 로딩 완료');
       
       // 지역이 선택된 경우에만 데이터 로딩
       if (selectedRegions.size > 0) {
@@ -898,7 +900,7 @@ export default function GeoDistributionPage() {
     const fetchSpotsData = async () => {
       // 지역이 선택되지 않은 경우 데이터 로딩하지 않음
       if (selectedRegions.size === 0) {
-        console.log('🚫 지역이 선택되지 않음 - 데이터 로딩 건너뜀');
+        logger.info('🚫 지역이 선택되지 않음 - 데이터 로딩 건너뜀');
         setSpots([]);
         setMetadata(null);
         return;
@@ -906,7 +908,7 @@ export default function GeoDistributionPage() {
 
       setLoadingData(true);
       try {
-        console.log('🗺️ 지오해시 블록 스팟 데이터 로딩 시작');
+        logger.info('🗺️ 지오해시 블록 스팟 데이터 로딩 시작');
         
         const activeCenterList = Array.from(activeCenters);
         const params = new URLSearchParams({
@@ -918,7 +920,7 @@ export default function GeoDistributionPage() {
         const response = await fetch(`/api/geo/spots?${params}`, { cache: 'no-store' });
         const result = await response.json();
         
-        console.log('📊 스팟 데이터 응답:', result);
+        logger.info('📊 스팟 데이터 응답:', result);
 
         setSpots(result.spots);
         setMetadata(result.metadata);
@@ -929,7 +931,7 @@ export default function GeoDistributionPage() {
         setCenterList(list);
         setActiveCenters(new Set(list));
       } catch (error) {
-        console.error('❌ 스팟 데이터 로딩 오류:', error);
+        logger.error('❌ 스팟 데이터 로딩 오류:', error);
       } finally {
         setLoadingData(false);
       }
@@ -951,9 +953,9 @@ export default function GeoDistributionPage() {
     try {
       // 최신 activeCenters 상태 가져오기
       const currentActiveCenters = activeCenters;
-      console.log('🗺️ 지오해시 블록 스팟 데이터 로딩 시작');
-      console.log('🔍 활성 센터:', Array.from(currentActiveCenters));
-      console.log('🔍 선택된 지역:', Array.from(selectedRegions));
+      logger.info('🗺️ 지오해시 블록 스팟 데이터 로딩 시작');
+      logger.info('🔍 활성 센터:', Array.from(currentActiveCenters));
+      logger.info('🔍 선택된 지역:', Array.from(selectedRegions));
       
       const params = new URLSearchParams({
         k: '5',
@@ -970,9 +972,9 @@ export default function GeoDistributionPage() {
         // API가 여러 센터를 받을 수 있도록 쉼표로 구분된 문자열로 전달
         const centersString = centersArray.join(',');
         params.append('centerIds', centersString);
-        console.log('📤 centerIds 파라미터 전달:', centersString);
+        logger.info('📤 centerIds 파라미터 전달:', centersString);
       } else {
-        console.log('⚠️ 활성 센터가 없어서 centerIds 파라미터를 전달하지 않습니다.');
+        logger.info('⚠️ 활성 센터가 없어서 centerIds 파라미터를 전달하지 않습니다.');
       }
 
       // 인증 토큰 가져오기
@@ -986,9 +988,9 @@ export default function GeoDistributionPage() {
       
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-        console.log('🔑 클라이언트에서 인증 토큰 전달');
+        logger.info('🔑 클라이언트에서 인증 토큰 전달');
       } else {
-        console.warn('⚠️ 인증 토큰이 없습니다.');
+        logger.warn('⚠️ 인증 토큰이 없습니다.');
       }
 
       const response = await fetch(`/api/geo/spots?${params}`, { 
@@ -997,10 +999,10 @@ export default function GeoDistributionPage() {
       });
       const result = await response.json();
       
-      console.log('📊 스팟 데이터 응답:', result);
+      logger.info('📊 스팟 데이터 응답:', result);
 
       if (result.success) {
-        console.log('📦 API 응답 데이터:', {
+        logger.info('📦 API 응답 데이터:', {
           spotsCount: result.data.spots?.length || 0,
           spots: result.data.spots?.slice(0, 3),
           metadata: result.data.metadata
@@ -1012,15 +1014,15 @@ export default function GeoDistributionPage() {
         // API 응답에서 센터 목록 추출 (중복 제거, "기타" 제외)
         const allCenters = Array.from(new Set(result.data.spots.map((s: Spot) => s.dominantCenter))) as string[];
         const centers = allCenters.filter(c => c !== '기타'); // "기타" 센터 제외
-        console.log('🏢 API 응답 센터 목록 (중복 제거):', allCenters);
-        console.log('🏢 API 응답 활성 센터 (기타 제외):', centers);
+        logger.info('🏢 API 응답 센터 목록 (중복 제거):', allCenters);
+        logger.info('🏢 API 응답 활성 센터 (기타 제외):', centers);
         
         // ⚠️ 중요: centerList는 지역 선택 시 설정된 센터 목록을 유지해야 함
         // API 응답의 센터 목록으로 centerList를 덮어쓰지 않음 (선택하지 않은 센터가 사라지는 것을 방지)
         // API 응답의 센터 목록은 참고용으로만 사용
         if (centers.length > 0) {
-          console.log('✅ API 응답 센터 목록 (참고용):', centers);
-          console.log('📋 현재 centerList (유지):', centerList);
+          logger.info('✅ API 응답 센터 목록 (참고용):', centers);
+          logger.info('📋 현재 centerList (유지):', centerList);
           
           // ⚠️ 중요: centerList는 지역 선택 시 설정된 목록을 유지
           // API 응답의 센터 목록으로 업데이트하지 않음
@@ -1032,13 +1034,13 @@ export default function GeoDistributionPage() {
           // (사용자가 선택한 센터는 유지)
         }
         
-        console.log('✅ 스팟 데이터 로딩 완료:', result.data.spots.length, '개 스팟');
-        console.log('📊 스팟 통계:', result.data.metadata);
+        logger.info('✅ 스팟 데이터 로딩 완료:', result.data.spots.length, '개 스팟');
+        logger.info('📊 스팟 통계:', result.data.metadata);
       } else {
-        console.error('❌ 스팟 데이터 로딩 실패:', result.error);
+        logger.error('❌ 스팟 데이터 로딩 실패:', result.error);
       }
     } catch (error) {
-      console.error('❌ 스팟 데이터 로딩 오류:', error);
+      logger.error('❌ 스팟 데이터 로딩 오류:', error);
     } finally {
       setLoadingData(false);
     }
@@ -1052,20 +1054,20 @@ export default function GeoDistributionPage() {
     if (activeCenters.size > 0 && selectedRegions.size > 0) {
       const timeoutId = setTimeout(() => {
         if (loadingData) return; // 로딩 중이면 건너뜀
-        console.log('🔄 사용자가 센터를 선택함 - 데이터 로딩 시작');
-        console.log('🔍 활성 센터:', Array.from(activeCenters));
+        logger.info('🔄 사용자가 센터를 선택함 - 데이터 로딩 시작');
+        logger.info('🔍 활성 센터:', Array.from(activeCenters));
         fetchSpotsData();
       }, 500); // 500ms 디바운스
       
       return () => clearTimeout(timeoutId);
     } else if (activeCenters.size === 0 && selectedRegions.size > 0) {
       // 지역은 선택되었지만 센터가 선택되지 않은 경우 - 데이터 초기화
-      console.log('⏳ 지역 선택됨, 센터 선택 대기 중 - 데이터 초기화');
+      logger.info('⏳ 지역 선택됨, 센터 선택 대기 중 - 데이터 초기화');
       setSpots([]);
       setMetadata(null);
     } else if (selectedRegions.size === 0) {
       // 지역 선택 해제
-      console.log('🚫 지역 선택 해제 - 스팟 데이터 초기화');
+      logger.info('🚫 지역 선택 해제 - 스팟 데이터 초기화');
       setSpots([]);
       setMetadata(null);
     }
@@ -1077,7 +1079,7 @@ export default function GeoDistributionPage() {
     
     const timeoutId = setTimeout(() => {
       if (loadingData) return; // 로딩 중이면 건너뜀
-      console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+      logger.info('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
       fetchSpotsData();
     }, 500); // 500ms 디바운스 증가
     
@@ -1090,7 +1092,7 @@ export default function GeoDistributionPage() {
     
     const timeoutId = setTimeout(() => {
       if (loadingData) return; // 로딩 중이면 건너뜀
-      console.log('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
+      logger.info('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
       fetchSpotsData();
     }, 800); // 800ms 디바운스 증가 (줌은 더 자주 변경되므로)
 
@@ -1150,7 +1152,7 @@ export default function GeoDistributionPage() {
     const filteredSpots = spots.filter(s => {
       // null/undefined 체크
       if (!s || !s.dominantCenter) {
-        console.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
+        logger.warn('⚠️ 유효하지 않은 스팟 데이터:', s);
         return false;
       }
       // activeCenters가 비어있으면 아무것도 표시하지 않음
@@ -1161,9 +1163,9 @@ export default function GeoDistributionPage() {
       return activeCenters.has(s.dominantCenter) && s.dominantCenter !== '기타';
     });
     
-    console.log('🔧 스팟 레이어 생성:', filteredSpots.length, '개 스팟');
-    console.log('🎯 활성 센터:', Array.from(activeCenters));
-    console.log('📍 스팟 위치 샘플:', filteredSpots.slice(0, 3).map(s => ({ 
+    logger.info('🔧 스팟 레이어 생성:', filteredSpots.length, '개 스팟');
+    logger.info('🎯 활성 센터:', Array.from(activeCenters));
+    logger.info('📍 스팟 위치 샘플:', filteredSpots.slice(0, 3).map(s => ({ 
       geohash: s.geohash, 
       lat: s.lat, 
       lng: s.lng, 
@@ -1174,7 +1176,7 @@ export default function GeoDistributionPage() {
     // 스팟 위치 중복 확인 및 겹침 방지 데이터 준비
     const positions = filteredSpots.map(s => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`);
     const uniquePositions = new Set(positions);
-    console.log('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
+    logger.info('📍 위치 중복 확인:', positions.length, '개 위치,', uniquePositions.size, '개 고유 위치');
     
     // ✅ 겹침 방지: 같은 위치의 스팟들을 약간 분산시키기 위한 맵 생성
     const positionCountMap = new Map<string, number>();
@@ -1196,7 +1198,7 @@ export default function GeoDistributionPage() {
     
     // 첫 로그에만 상대적 스케일링 정보 출력
     if (filteredSpots.length > 0) {
-      console.log(`📊 상대적 크기 스케일링: 회원 수 ${minCount}~${maxCount}명 → 크기 ${minRadius}~${maxRadius}m`);
+      logger.info(`📊 상대적 크기 스케일링: 회원 수 ${minCount}~${maxCount}명 → 크기 ${minRadius}~${maxRadius}m`);
     }
     
     // 첫 3개 스팟만 로그 출력 (전체 로그는 너무 많음)
@@ -1209,7 +1211,7 @@ export default function GeoDistributionPage() {
       pickable: true,
       getPosition: (d: Spot) => {
         if (!d || typeof d.lng !== 'number' || typeof d.lat !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
+          logger.warn('⚠️ 스팟 데이터가 null이거나 좌표가 없습니다:', d);
           return [126.9780, 37.5665]; // 서울 시청 좌표 (기본값)
         }
         
@@ -1240,13 +1242,13 @@ export default function GeoDistributionPage() {
         // - dominantCenter만 사용하여 센터별 색상 결정
         // - 회원 수(totalApprox)는 색상에 영향을 주지 않음
         if (!d || !d.dominantCenter) {
-          console.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
+          logger.warn('⚠️ 스팟 데이터가 null이거나 dominantCenter가 없습니다:', d);
           return [128, 128, 128, 150]; // 기본 회색
         }
         // 센터별 고정 색상 사용 (회원 수와 무관)
         const color = getCenterColor(d.dominantCenter, true);
         if (loggedCount < 3) {
-          console.log('🎨 스팟 색상 (센터별 고정):', d.dominantCenter, '→', color, '(회원 수:', d.totalApprox, '명과 무관)');
+          logger.info('🎨 스팟 색상 (센터별 고정):', d.dominantCenter, '→', color, '(회원 수:', d.totalApprox, '명과 무관)');
           loggedCount++;
         }
         return color;
@@ -1257,7 +1259,7 @@ export default function GeoDistributionPage() {
         // - 줌 레벨에 상관없이 화면상에서 같은 크기 유지
         // - 회원 수에 따라 상대적 크기 표현 (제곱근 스케일링으로 배수보다 부드럽게)
         if (!d || typeof d.totalApprox !== 'number') {
-          console.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
+          logger.warn('⚠️ 스팟 데이터가 null이거나 totalApprox가 없습니다:', d);
           return 18; // 최소 픽셀 크기 반환
         }
         
@@ -1291,7 +1293,7 @@ export default function GeoDistributionPage() {
         // 첫 3개만 로그 출력
         const index = filteredSpots.indexOf(d);
         if (index >= 0 && index < 3) {
-          console.log(`📏 스팟 크기: ${d.totalApprox}명 → ${radiusPixels.toFixed(1)}px (제곱근 스케일링, ${minCount}~${maxCount}명 범위)`);
+          logger.info(`📏 스팟 크기: ${d.totalApprox}명 → ${radiusPixels.toFixed(1)}px (제곱근 스케일링, ${minCount}~${maxCount}명 범위)`);
         }
         return radiusPixels;
       },
@@ -1399,9 +1401,9 @@ export default function GeoDistributionPage() {
         overlayRef.current?.setProps({
           layers: []
         });
-        console.log('🚫 활성 센터가 없어서 레이어 제거');
+        logger.info('🚫 활성 센터가 없어서 레이어 제거');
       } catch (error) {
-        console.error('❌ 레이어 제거 오류:', error);
+        logger.error('❌ 레이어 제거 오류:', error);
       }
       return;
     }
@@ -1413,7 +1415,7 @@ export default function GeoDistributionPage() {
           layers: []
         });
       } catch (error) {
-        console.error('❌ 레이어 제거 오류:', error);
+        logger.error('❌ 레이어 제거 오류:', error);
       }
       return;
     }
@@ -1428,9 +1430,9 @@ export default function GeoDistributionPage() {
         overlayRef.current?.setProps({
           layers: layersArray
         });
-        console.log('✅ 스팟 레이어 업데이트 완료:', layersArray.length, '개 레이어');
+        logger.info('✅ 스팟 레이어 업데이트 완료:', layersArray.length, '개 레이어');
       } catch (error) {
-        console.error('❌ 레이어 설정 오류:', error);
+        logger.error('❌ 레이어 설정 오류:', error);
       }
     }, 300);
 
@@ -1443,10 +1445,16 @@ export default function GeoDistributionPage() {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation?.(); // 즉시 전파 중지
+      // @ts-ignore - React 이벤트와 DOM 이벤트 호환성 문제 해결
+      if (event.nativeEvent && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
+        // @ts-ignore
+        event.nativeEvent.stopImmediatePropagation();
+      } else if (typeof (event as any).stopImmediatePropagation === 'function') {
+        (event as any).stopImmediatePropagation();
+      }
     }
     
-    console.log('🔘 센터 토글:', { centerId, checked, activeCenters: Array.from(activeCenters) });
+    logger.info('🔘 센터 토글:', { centerId, checked, activeCenters: Array.from(activeCenters) });
     
     const newActiveCenters = new Set(activeCenters);
     if (checked) {
@@ -1491,10 +1499,7 @@ export default function GeoDistributionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -1503,9 +1508,12 @@ export default function GeoDistributionPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 헤더 - 상단 고정 */}
-        <div className="mb-6 sticky top-[80px] z-[9998] bg-gray-50 pb-4 pt-2 -mx-6 px-6 border-b border-gray-200">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">회원 분포도 (지오해시 블록 스팟)</h1>
-          <p className="text-gray-600">지오해시 블록 기반 스팟으로 프라이버시 보호된 회원 분포 시각화</p>
+        <div className="sticky top-[80px] z-[9998] bg-gray-50 pb-4 pt-2 -mx-6 px-6 border-b border-gray-200 mb-6">
+          <PageHeader
+            title="회원 분포도 (지오해시 블록 스팟)"
+            description="지오해시 블록 기반 스팟으로 프라이버시 보호된 회원 분포 시각화"
+            className="mb-0"
+          />
         </div>
 
         {/* 컨트롤 패널 */}
@@ -1519,13 +1527,13 @@ export default function GeoDistributionPage() {
                 <RegionSelectorWrapper
                 selectedRegions={selectedRegions}
                 onRegionsChange={(regions) => {
-                  console.log('🔍 회원분포도 - 지역 선택 변경:', Array.from(regions));
+                  logger.info('🔍 회원분포도 - 지역 선택 변경:', Array.from(regions));
                   setSelectedRegions(regions);
                 }}
                 onSidoChange={(sido) => {
-                  console.log('🔍 회원분포도 - 시/도 선택:', sido);
-                  console.log('🔍 현재 selectedRegions:', Array.from(selectedRegions));
-                  console.log('🔍 regionCenters 상태:', Object.keys(regionCenters).length > 0 ? '초기화됨' : '초기화 안됨');
+                  logger.info('🔍 회원분포도 - 시/도 선택:', sido);
+                  logger.info('🔍 현재 selectedRegions:', Array.from(selectedRegions));
+                  logger.info('🔍 regionCenters 상태:', Object.keys(regionCenters).length > 0 ? '초기화됨' : '초기화 안됨');
                   setCurrentSelectedSido(sido);
                   // regionCenters가 초기화된 후에만 센터 목록 업데이트
                   if (Object.keys(regionCenters).length > 0) {
@@ -1533,19 +1541,19 @@ export default function GeoDistributionPage() {
                     if (sido && sido !== '전국' && selectedRegions.size === 0) {
                       const normalizedSido = normalizeRegionName(sido);
                       const sidoCenters = regionCenters[normalizedSido] || regionCenters[sido] || [];
-                      console.log(`📍 시/도만 선택 - ${sido} (${normalizedSido}) 센터 찾기:`, sidoCenters);
-                      console.log(`📋 regionCenters에서 찾은 키:`, normalizedSido, sido);
+                      logger.info(`📍 시/도만 선택 - ${sido} (${normalizedSido}) 센터 찾기:`, sidoCenters);
+                      logger.info(`📋 regionCenters에서 찾은 키:`, normalizedSido, sido);
                       if (sidoCenters.length > 0) {
-                        console.log(`✅ 시/도 센터 목록 설정:`, sidoCenters);
+                        logger.info(`✅ 시/도 센터 목록 설정:`, sidoCenters);
                         setCenterList(sidoCenters);
                       } else {
-                        console.log(`⚠️ ${sido} (${normalizedSido})에 대한 센터가 없습니다.`);
-                        console.log(`📋 regionCenters 전체 키:`, Object.keys(regionCenters));
-                        console.log(`📋 관련 키들:`, Object.keys(regionCenters).filter(k => k.includes(sido) || k.includes(normalizedSido)));
+                        logger.info(`⚠️ ${sido} (${normalizedSido})에 대한 센터가 없습니다.`);
+                        logger.info(`📋 regionCenters 전체 키:`, Object.keys(regionCenters));
+                        logger.info(`📋 관련 키들:`, Object.keys(regionCenters).filter(k => k.includes(sido) || k.includes(normalizedSido)));
                       }
                     }
                   } else {
-                    console.log('⏳ regionCenters가 아직 초기화되지 않았습니다. useEffect에서 처리됩니다.');
+                    logger.info('⏳ regionCenters가 아직 초기화되지 않았습니다. useEffect에서 처리됩니다.');
                   }
                 }}
                 layout="simple"
@@ -1664,22 +1672,22 @@ export default function GeoDistributionPage() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        e.stopImmediatePropagation?.(); // 즉시 전파 중지
-                        console.log('🔘 센터 버튼 클릭:', { centerId, isActive, event: e.type });
+                        (e as any).nativeEvent?.stopImmediatePropagation?.(); // 즉시 전파 중지
+                        logger.info('🔘 센터 버튼 클릭:', { centerId, isActive, event: e.type });
                         toggleCenter(centerId, !isActive, e);
                         return false; // 추가 안전장치
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault(); // mousedown 이벤트도 차단
                         e.stopPropagation();
-                        e.stopImmediatePropagation?.();
-                        console.log('🔘 센터 버튼 mousedown:', { centerId });
+                        (e as any).nativeEvent?.stopImmediatePropagation?.();
+                        logger.info('🔘 센터 버튼 mousedown:', { centerId });
                         return false;
                       }}
                       onMouseUp={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        e.stopImmediatePropagation?.();
+                        (e as any).nativeEvent?.stopImmediatePropagation?.();
                         return false;
                       }}
                       className={`

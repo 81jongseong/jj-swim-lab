@@ -1,10 +1,12 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, TrendingUp, Activity, Target, Clock, Users } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface AlgorithmPerformance {
   algorithmId: string;
@@ -84,7 +86,7 @@ function AlgorithmPerformancePage() {
       ];
       setPerformanceData(tempData);
     } catch (error) {
-      console.error('알고리즘 성과 데이터 로드 실패:', error);
+      logger.error('알고리즘 성과 데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +95,7 @@ function AlgorithmPerformancePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -101,10 +103,10 @@ function AlgorithmPerformancePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">알고리즘 성과 분석</h1>
-        <p className="text-gray-600">AI 알고리즘의 성능과 정확도를 모니터링하세요</p>
-      </div>
+      <PageHeader
+        title="알고리즘 성과 분석"
+        description="AI 알고리즘의 성능과 정확도를 모니터링하세요"
+      />
 
       {/* 전체 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

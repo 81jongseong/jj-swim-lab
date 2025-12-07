@@ -10,9 +10,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui';
-import { Card } from '../../components/ui/Card';
+import { Card } from '../../components/ui';
 import { Badge } from '../../components/ui';
-import { Progress    } from '../../components/ui/progress';
+import { Progress } from '../../components/ui';
+import { logger } from '@/lib/logger';
+import { LoadingState } from '@/components/common';
 
 // 강습법 카테고리 상수
 const TEACHING_METHOD_CATEGORIES = [
@@ -96,7 +98,7 @@ export default function MobileLearningPage() {
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('❌ JWT 토큰이 없습니다.');
+        logger.error('JWT 토큰이 없습니다.');
         return;
       }
 
@@ -124,10 +126,10 @@ export default function MobileLearningPage() {
           stats
         });
       } else {
-        console.error('❌ 강습법 조회 실패:', methodsResponse.status);
+        logger.error('강습법 조회 실패', { status: methodsResponse.status });
       }
     } catch (error) {
-      console.error('❌ 학습 데이터 조회 중 오류:', error);
+      logger.error('학습 데이터 조회 중 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -241,10 +243,7 @@ export default function MobileLearningPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">학습 데이터를 불러오는 중...</p>
-        </div>
+        <LoadingState message="학습 데이터를 불러오는 중..." size="lg" />
       </div>
     );
   }

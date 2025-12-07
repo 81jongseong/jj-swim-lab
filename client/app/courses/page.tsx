@@ -1,5 +1,6 @@
-"use client";
+'use client';
 
+import { logger } from '@/lib/logger';
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +17,8 @@ import {
   RefreshCw,
   Info,
 } from "lucide-react";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui";
+import { LoadingState, ErrorState, PageHeader, ConfirmModal } from '@/components/common';
 
 interface EnrolledCourse {
   _id: string;
@@ -106,6 +108,19 @@ export default function StudentCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (authLoading) return;
@@ -160,10 +175,7 @@ export default function StudentCoursesPage() {
     return (
       <div className="min-h-screen bg-slate-50 pt-20 pb-16">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex flex-col items-center justify-center py-24 text-slate-600">
-            <Loader2 className="h-10 w-10 animate-spin mb-4" />
-            <p className="text-lg font-medium">내 강습 정보를 불러오는 중입니다...</p>
-          </div>
+          <LoadingState message="내 강습 정보를 불러오는 중입니다..." size="lg" />
         </div>
       </div>
     );
@@ -173,21 +185,11 @@ export default function StudentCoursesPage() {
     return (
       <div className="min-h-screen bg-slate-50 pt-20 pb-16">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="bg-white border border-red-100 rounded-3xl shadow-sm p-8 text-center space-y-6">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-slate-900">내 강의를 불러올 수 없습니다</h1>
-              <p className="text-slate-600">{error}</p>
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700 text-white">
-                다시 시도하기
-              </Button>
-              <Link href="/map" className="text-sm text-blue-600 hover:text-blue-700">
-                수영센터 찾기
-              </Link>
-            </div>
-          </div>
+          <ErrorState 
+            message={`내 강의를 불러올 수 없습니다: ${error}`}
+            onRetry={() => window.location.reload()}
+            retryText="다시 시도하기"
+          />
         </div>
       </div>
     );
@@ -222,31 +224,29 @@ export default function StudentCoursesPage() {
   return (
     <div className="min-h-screen bg-slate-50 pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4 space-y-8">
-        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-extrabold text-slate-900">내 강의</h1>
-            <p className="text-slate-600 text-sm">
-              결제가 완료된 강습만 표시됩니다. 강습 일정과 상태를 확인하고, 필요시 센터에 문의하세요.
-            </p>
-          </div>
-          {levelOptions.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-600">레벨 필터</span>
-              <select
-                value={selectedLevel}
-                onChange={(event) => setSelectedLevel(event.target.value)}
-                className="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="all">전체 레벨</option>
-                {levelOptions.map((level) => (
-                  <option key={level} value={level}>
-                    {levelLabels[level] || level}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </header>
+        <PageHeader
+          title="내 강의"
+          description="결제가 완료된 강습만 표시됩니다. 강습 일정과 상태를 확인하고, 필요시 센터에 문의하세요."
+          actions={
+            levelOptions.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-600">레벨 필터</span>
+                <select
+                  value={selectedLevel}
+                  onChange={(event) => setSelectedLevel(event.target.value)}
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="all">전체 레벨</option>
+                  {levelOptions.map((level) => (
+                    <option key={level} value={level}>
+                      {levelLabels[level] || level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : undefined
+          }
+        />
 
         <section className="grid grid-cols-1 gap-6">
           {filteredCourses.map((course) => {
@@ -267,7 +267,7 @@ export default function StudentCoursesPage() {
                   isCourseStarted = start <= now;
                 }
               } catch (err) {
-                console.error('강의 시작일 파싱 오류:', err);
+                logger.error('강의 시작일 파싱 오류:', err);
                 isCourseStarted = false; // 파싱 실패 시 시작 전으로 간주
               }
             }
@@ -376,21 +376,28 @@ export default function StudentCoursesPage() {
                         variant="outline" 
                         className="text-sm border-gray-300 text-gray-600 hover:bg-gray-50"
                         onClick={async () => {
-                          if (confirm('환불 신청을 취소하시겠습니까?')) {
-                            try {
-                              const response = await apiClient.delete(`/api/courses/${course._id}/refund-request`);
-                              if (response.success) {
-                                alert('환불 신청이 취소되었습니다.');
-                                window.location.reload();
-                              } else {
-                                alert(response.message || '환불 신청 취소에 실패했습니다.');
+                          setConfirmModal({
+                            isOpen: true,
+                            message: '환불 신청을 취소하시겠습니까?',
+                            variant: 'warning',
+                            onConfirm: async () => {
+                              try {
+                                const response = await apiClient.delete(`/api/courses/${course._id}/refund-request`);
+                                if (response.success) {
+                                  alert('환불 신청이 취소되었습니다.');
+                                  window.location.reload();
+                                } else {
+                                  alert(response.message || '환불 신청 취소에 실패했습니다.');
+                                }
+                                setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                              } catch (error: any) {
+                                logger.error('환불 신청 취소 오류:', error);
+                                const errorMessage = error.response?.data?.message || '환불 신청 취소 중 오류가 발생했습니다.';
+                                alert(errorMessage);
+                                setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
                               }
-                            } catch (error: any) {
-                              console.error('환불 신청 취소 오류:', error);
-                              const errorMessage = error.response?.data?.message || '환불 신청 취소 중 오류가 발생했습니다.';
-                              alert(errorMessage);
                             }
-                          }
+                          });
                         }}
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
@@ -402,23 +409,30 @@ export default function StudentCoursesPage() {
                         className="text-sm border-orange-300 text-orange-600 hover:bg-orange-50"
                         onClick={async () => {
                           // ⭐ 환불 정책 안내 제거 (카드에만 표시)
-                          if (confirm('환불 신청을 하시겠습니까?')) {
-                            try {
-                              const response = await apiClient.post(`/api/courses/${course._id}/refund-request`, {
-                                courseId: course._id
-                              });
-                              if (response.success) {
-                                alert(response.message || '환불 신청이 접수되었습니다.');
-                                window.location.reload();
-                              } else {
-                                alert(response.message || '환불 신청에 실패했습니다.');
+                          setConfirmModal({
+                            isOpen: true,
+                            message: '환불 신청을 하시겠습니까?',
+                            variant: 'warning',
+                            onConfirm: async () => {
+                              try {
+                                const response = await apiClient.post(`/api/courses/${course._id}/refund-request`, {
+                                  courseId: course._id
+                                });
+                                if (response.success) {
+                                  alert(response.message || '환불 신청이 접수되었습니다.');
+                                  window.location.reload();
+                                } else {
+                                  alert(response.message || '환불 신청에 실패했습니다.');
+                                }
+                                setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                              } catch (error: any) {
+                                logger.error('환불 신청 오류:', error);
+                                const errorMessage = error.response?.data?.message || '환불 신청 중 오류가 발생했습니다.';
+                                alert(errorMessage);
+                                setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
                               }
-                            } catch (error: any) {
-                              console.error('환불 신청 오류:', error);
-                              const errorMessage = error.response?.data?.message || '환불 신청 중 오류가 발생했습니다.';
-                              alert(errorMessage);
                             }
-                          }
+                          });
                         }}
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
@@ -441,6 +455,18 @@ export default function StudentCoursesPage() {
           })}
         </section>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

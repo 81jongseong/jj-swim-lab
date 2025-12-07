@@ -99,6 +99,8 @@
  * 5. 에러 처리 및 재시도 로직 실행
  */
 
+import { logger } from '@/lib/logger';
+
 // API 요청/응답 타입 정의
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -292,7 +294,16 @@ class ApiClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    // 항상 Express 서버로 직접 호출 (프록시 라우트 제거로 인한 변경)
+    // 환경 변수가 잘못 설정되어 있으면 기본값 사용
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl && envUrl.includes('localhost:3000')) {
+      // Next.js 서버로 설정된 경우 무시하고 Express 서버 사용
+      this.baseURL = 'http://localhost:5000';
+      logger.warn('NEXT_PUBLIC_API_URL이 localhost:3000으로 설정되어 있어 Express 서버(localhost:5000)로 변경합니다.');
+    } else {
+      this.baseURL = envUrl || 'http://localhost:5000';
+    }
   }
 
   /**
@@ -318,11 +329,6 @@ class ApiClient {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const centerId = typeof window !== 'undefined' ? (localStorage.getItem('centerId') || '') : '';
     
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🔍 API 요청: ${this.baseURL}${endpoint}`);
-        console.log(`🔑 인증 토큰: ${token ? '있음' : '없음'}`);
-      }
-
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -334,19 +340,45 @@ class ApiClient {
     };
 
     try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      const data = await response.json();
+      logger.api(`API 요청: ${this.baseURL}${endpoint}`, { token: token ? '있음' : '없음' });
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`📡 응답 상태: ${response.status} ${response.statusText}`);
-        console.log(`📊 응답 데이터:`, data);
+      // 타임아웃 설정 (30초)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // 응답이 JSON인지 확인
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      let data: any;
+      if (isJson) {
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          logger.error('JSON 파싱 오류:', jsonError);
+          const text = await response.text();
+          logger.error('응답 텍스트:', text);
+          throw new Error(`JSON 파싱 실패: ${text.substring(0, 100)}`);
+        }
+      } else {
+        const text = await response.text();
+        logger.warn('JSON이 아닌 응답:', { status: response.status, contentType, text: text.substring(0, 200) });
+        data = { success: false, message: `예상치 못한 응답 형식: ${contentType}`, error: text.substring(0, 200) };
       }
+      
+      logger.api(`응답 상태: ${response.status} ${response.statusText}`, { success: data.success, hasData: !!data.data });
 
       if (!response.ok) {
         const errorMessage = data.error || data.message || '알 수 없는 오류';
         const errorDetails = typeof data === 'object' ? JSON.stringify(data) : String(data);
-        console.error(`❌ API 오류: ${response.status} - ${errorMessage}`);
-        console.error(`📋 오류 상세:`, errorDetails);
+        logger.error(`API 오류: ${response.status} - ${errorMessage}`, errorDetails);
         
         // 401 Unauthorized 오류 시 자동 로그아웃 처리
         if (response.status === 401) {
@@ -354,13 +386,11 @@ class ApiClient {
                                  data.error?.includes('만료') || 
                                  data.message?.includes('만료');
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔐 인증 오류 감지 - 자동 로그아웃 처리', {
-              isTokenExpired,
-              code: data.code,
-              error: data.error
-            });
-          }
+          logger.warn('인증 오류 감지 - 자동 로그아웃 처리', {
+            isTokenExpired,
+            code: data.code,
+            error: data.error
+          });
           
           // 토큰 및 사용자 정보 제거
           localStorage.removeItem('token');
@@ -393,12 +423,19 @@ class ApiClient {
 
       // 서버 응답 구조를 그대로 반환 (success, data, message 등 포함)
       return data as T;
-    } catch (error) {
-      console.error(`💥 네트워크 오류:`, error);
-      return { 
-        error: '네트워크 오류가 발생했습니다.',
-        success: false
-      } as T;
+    } catch (fetchError: any) {
+      // AbortError는 타임아웃
+      if (fetchError.name === 'AbortError') {
+        logger.error('API 요청 타임아웃:', endpoint);
+        return {
+          error: '요청 시간이 초과되었습니다. 다시 시도해주세요.',
+          status: 408,
+          success: false
+        } as T;
+      }
+      
+      logger.error('API 요청 중 오류:', fetchError);
+      throw fetchError;
     }
   }
 

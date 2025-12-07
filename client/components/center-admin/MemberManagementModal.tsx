@@ -1,9 +1,4 @@
-/**
- * 회원 관리 통합 모달 컴포넌트
- * 연동되는 데이터: 회원 정보, 강습 과정 목록, 메모 이력
- * 연동되는 파일: center-admin/users/page.tsx
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, AlertCircle, GraduationCap, Target, MessageSquare, Users, Plus, Trash2, Edit, BookOpen } from 'lucide-react';
 
@@ -148,7 +143,7 @@ export default function MemberManagementModal({
         });
       }
     } catch (error) {
-      console.error('메모 업데이트 오류:', error);
+      logger.error('메모 업데이트 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +161,7 @@ export default function MemberManagementModal({
           member.centerMemos = member.centerMemos.filter(memo => memo._id !== memoId);
         }
       } catch (error) {
-        console.error('메모 삭제 오류:', error);
+        logger.error('메모 삭제 오류:', error);
       } finally {
         setIsLoading(false);
       }
@@ -222,7 +217,7 @@ export default function MemberManagementModal({
         setEditMemoType('info');
       }
     } catch (error) {
-      console.error('메모 수정 오류:', error);
+      logger.error('메모 수정 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -237,7 +232,7 @@ export default function MemberManagementModal({
       await onAssignCourse(member._id, selectedCourse);
       setSelectedCourse('');
     } catch (error) {
-      console.error('과정 배정 오류:', error);
+      logger.error('과정 배정 오류:', error);
     } finally {
       setIsLoading(false);
     }

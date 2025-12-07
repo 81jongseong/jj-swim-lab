@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -126,7 +127,7 @@ export const InstructorHistoryManager: React.FC<InstructorHistoryManagerProps> =
         setCertifications(result.data.certifications);
       }
     } catch (error) {
-      console.error('강사 이력 로드 실패:', error);
+      logger.error('강사 이력 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -148,7 +149,7 @@ export const InstructorHistoryManager: React.FC<InstructorHistoryManagerProps> =
         setCenterDashboard(result.data);
       }
     } catch (error) {
-      console.error('센터 대시보드 로드 실패:', error);
+      logger.error('센터 대시보드 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -173,10 +174,10 @@ export const InstructorHistoryManager: React.FC<InstructorHistoryManagerProps> =
       if (response.ok) {
         const result = await response.json();
         // 검색 결과 처리
-        console.log('검색 결과:', result.data.instructors);
+        logger.info('검색 결과:', result.data.instructors);
       }
     } catch (error) {
-      console.error('강사 검색 실패:', error);
+      logger.error('강사 검색 실패:', error);
     } finally {
       setLoading(false);
     }

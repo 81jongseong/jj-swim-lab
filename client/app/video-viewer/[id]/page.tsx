@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
+import { LoadingState, ErrorState } from '@/components/common';
+import { Progress, Button } from '@/components/ui';
 // import ThreeJSAnimationViewer from './../../components/ThreeJSAnimationViewer';
 
 interface VideoData {
@@ -52,7 +55,7 @@ const VideoViewerPage: React.FC = () => {
         setError(result.message || '비디오 데이터를 가져올 수 없습니다.');
       }
     } catch (err) {
-      console.error('비디오 데이터 조회 오류:', err);
+      logger.error('비디오 데이터 조회 오류:', err);
       setError('비디오 데이터를 가져오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -96,10 +99,7 @@ const VideoViewerPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl">3D 뷰어 로딩 중...</p>
-        </div>
+        <LoadingState message="3D 뷰어 로딩 중..." size="lg" className="text-white" />
       </div>
     );
   }
@@ -107,17 +107,12 @@ const VideoViewerPage: React.FC = () => {
   if (error || !videoData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center text-white max-w-md mx-auto">
-          <div className="text-6xl mb-4">❌</div>
-          <h1 className="text-2xl font-bold mb-4">오류 발생</h1>
-          <p className="text-red-200 mb-6">{error || '비디오를 찾을 수 없습니다.'}</p>
-          <button
-            onClick={() => router.push('/video-upload')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            새로 업로드
-          </button>
-        </div>
+        <ErrorState 
+          message={error || '비디오를 찾을 수 없습니다.'}
+          onRetry={() => router.push('/video-upload')}
+          retryText="새로 업로드"
+          className="text-white"
+        />
       </div>
     );
   }
@@ -125,20 +120,12 @@ const VideoViewerPage: React.FC = () => {
   if (videoData.status === 'failed') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center text-white max-w-md mx-auto">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold mb-4">처리 실패</h1>
-          <p className="text-red-200 mb-2">3D 애니메이션 생성에 실패했습니다.</p>
-          {videoData.error && (
-            <p className="text-sm text-red-300 mb-6">{videoData.error}</p>
-          )}
-          <button
-            onClick={() => router.push('/video-upload')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            다시 시도
-          </button>
-        </div>
+        <ErrorState 
+          message={`3D 애니메이션 생성에 실패했습니다.${videoData.error ? `\n${videoData.error}` : ''}`}
+          onRetry={() => router.push('/video-upload')}
+          retryText="다시 시도"
+          className="text-white"
+        />
       </div>
     );
   }
@@ -152,21 +139,19 @@ const VideoViewerPage: React.FC = () => {
           <p className="text-blue-200 mb-4">
             AI가 3D 애니메이션을 생성하고 있습니다...
           </p>
-          <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-            <div 
-              className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${videoData.progress}%` }}
-            ></div>
+          <div className="w-full mb-4">
+            <Progress value={videoData.progress} className="h-2 bg-gray-700 [&>div]:bg-purple-500" />
           </div>
           <p className="text-sm text-gray-300">
             진행률: {videoData.progress}%
           </p>
-          <button
+          <Button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            variant="secondary"
+            className="mt-4"
           >
             새로고침
-          </button>
+          </Button>
         </div>
       </div>
     );

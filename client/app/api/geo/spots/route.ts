@@ -1,15 +1,4 @@
-/**
- * 지오해시 블록 기반 스팟 API
- * 
- * 연동되는 데이터:
- * - 주소 데이터를 지오해시 블록으로 집계
- * - k-익명성, 노이즈, 반올림을 통한 프라이버시 보호
- * 
- * 연동되는 파일:
- * - client/app/admin/geo/page-block-spots.tsx (프론트엔드)
- * - client/lib/center-colors.ts (센터 색상 관리)
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import ngeohash from 'ngeohash';
 
@@ -67,23 +56,23 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
       headers['Authorization'] = `Bearer ${authToken}`;
     }
     
-    console.log('📡 서버 API 호출:', `${serverUrl}/api/geo/aggregate?${queryParams.toString()}`);
-    console.log('📡 centerId 전달:', centerId || '없음');
+    logger.info('📡 서버 API 호출:', `${serverUrl}/api/geo/aggregate?${queryParams.toString()}`);
+    logger.info('📡 centerId 전달:', centerId || '없음');
     // ObjectId 형식 체크 (24자리 16진수 문자열)
     const isObjectIdFormat = centerId && /^[0-9a-fA-F]{24}$/.test(centerId);
-    console.log('📡 centerId 타입:', typeof centerId, centerId ? (isObjectIdFormat ? 'ObjectId 형식' : '센터 이름') : '없음');
+    logger.info('📡 centerId 타입:', typeof centerId, centerId ? (isObjectIdFormat ? 'ObjectId 형식' : '센터 이름') : '없음');
     
     const response = await fetch(`${serverUrl}/api/geo/aggregate?${queryParams.toString()}`, {
       cache: 'no-store',
       headers
     });
 
-    console.log('📡 서버 API 응답 상태:', response.status, response.statusText);
+    logger.info('📡 서버 API 응답 상태:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn(`⚠️ 서버 API 호출 실패 (${response.status}):`, errorText);
-      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
+      logger.warn(`⚠️ 서버 API 호출 실패 (${response.status}):`, errorText);
+      logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
       return []; // ⚠️ 목업 데이터 반환하지 않음 - 센터 관리자는 본인 센터 회원만 조회
     }
 
@@ -91,8 +80,8 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     try {
       result = await response.json();
     } catch (jsonError) {
-      console.error('❌ 서버 API JSON 파싱 오류:', jsonError);
-      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      logger.error('❌ 서버 API JSON 파싱 오류:', jsonError);
+      logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
       return []; // ⚠️ 목업 데이터 반환하지 않음
     }
     
@@ -100,7 +89,7 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     // cells가 최상위 레벨에 있음 (data 안에 없음)
     const cells = result?.cells || result?.data?.cells || [];
     
-    console.log('📡 서버 API 응답:', {
+    logger.info('📡 서버 API 응답:', {
       hasSuccess: !!result?.success,
       hasData: !!result?.data,
       cellsCount: cells.length,
@@ -120,27 +109,27 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     });
     
     if (!result || !result.success || cells.length === 0) {
-      console.warn('⚠️ 서버 API 응답 형식 오류 또는 셀 데이터 없음:', {
+      logger.warn('⚠️ 서버 API 응답 형식 오류 또는 셀 데이터 없음:', {
         hasSuccess: !!result?.success,
         hasCells: cells.length > 0,
         cellsLength: cells.length,
         resultKeys: result ? Object.keys(result) : '없음'
       });
-      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
       return []; // ⚠️ 목업 데이터 반환하지 않음
     }
 
     // H3 셀 데이터를 geohash 형식으로 변환
     const rows: Row[] = [];
-    console.log(`📊 셀 데이터: ${cells.length}개`);
+    logger.info(`📊 셀 데이터: ${cells.length}개`);
     
     if (cells.length === 0) {
-      console.warn('⚠️ 셀 데이터가 없습니다');
+      logger.warn('⚠️ 셀 데이터가 없습니다');
       return [];
     }
     
     // 첫 번째 셀 샘플 로그
-    console.log(`📊 첫 번째 셀 샘플:`, {
+    logger.info(`📊 첫 번째 셀 샘플:`, {
       hasH3Index: !!cells[0].h3Index,
       hasLatLng: !!(cells[0].lat && cells[0].lng),
       hasCenters: !!cells[0].centers,
@@ -160,7 +149,7 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
       
       // 좌표 유효성 검사
       if (!lat || !lng || isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
-        console.warn(`⚠️ 유효하지 않은 좌표:`, { 
+        logger.warn(`⚠️ 유효하지 않은 좌표:`, { 
           h3Index: cell.h3Index, 
           lat: cell.lat, 
           lng: cell.lng,
@@ -171,7 +160,7 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
       
       // 좌표 범위 검사 (한국 지역: 위도 33~43, 경도 124~132)
       if (lat < 33 || lat > 43 || lng < 124 || lng > 132) {
-        console.warn(`⚠️ 좌표가 한국 지역 범위를 벗어남:`, { lat, lng, h3Index: cell.h3Index });
+        logger.warn(`⚠️ 좌표가 한국 지역 범위를 벗어남:`, { lat, lng, h3Index: cell.h3Index });
         continue;
       }
       
@@ -205,9 +194,9 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
       }
     }
     
-    console.log(`📊 변환된 rows: ${rows.length}개`);
+    logger.info(`📊 변환된 rows: ${rows.length}개`);
     if (rows.length > 0) {
-      console.log(`📊 첫 번째 row 샘플:`, {
+      logger.info(`📊 첫 번째 row 샘플:`, {
         geohash: rows[0].geohash,
         center_id: rows[0].center_id,
         count: rows[0].count
@@ -215,23 +204,23 @@ async function fetchAggBlocks(precision: number, dong?: string, memberType?: str
     }
 
     if (rows.length === 0) {
-      console.warn('⚠️ 서버 API에서 데이터가 없음');
-      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
+      logger.warn('⚠️ 서버 API에서 데이터가 없음');
+      logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환 (센터 관리자는 본인 센터 회원만 조회)');
       return []; // ⚠️ 목업 데이터 반환하지 않음 - 센터 관리자는 본인 센터 회원만 조회
     }
 
-    console.log(`✅ 실제 DB 데이터 사용: ${rows.length}개 블록`);
-    console.log(`📊 첫 번째 블록 샘플:`, rows[0] ? {
+    logger.info(`✅ 실제 DB 데이터 사용: ${rows.length}개 블록`);
+    logger.info(`📊 첫 번째 블록 샘플:`, rows[0] ? {
       geohash: rows[0].geohash,
       center_id: rows[0].center_id,
       count: rows[0].count
     } : '없음');
     return rows;
   } catch (error) {
-    console.error('❌ 서버 API 호출 오류:', error);
-    console.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
-    console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
-    console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+    logger.error('❌ 서버 API 호출 오류:', error);
+    logger.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
+    logger.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
+    logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
     return []; // ⚠️ 목업 데이터 반환하지 않음
   }
 }
@@ -283,7 +272,7 @@ function getBlockCenterFromGeohash(geohash: string, precision: number): { lat: n
       lng: longitude + offsetLng
     };
   } catch (error) {
-    console.error('❌ 블록 중심 좌표 계산 오류:', error);
+    logger.error('❌ 블록 중심 좌표 계산 오류:', error);
     // 오류 시 원본 좌표 반환
     try {
       const { latitude, longitude } = ngeohash.decode(geohash);
@@ -488,7 +477,7 @@ function getMockData(memberType?: string, centerId?: string): Row[] {
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('🗺️ 지오해시 블록 스팟 API 호출 시작');
+    logger.info('🗺️ 지오해시 블록 스팟 API 호출 시작');
 
     const p = Number(req.nextUrl.searchParams.get('precision') || '7'); // 7 or 8 권장
     const dong = req.nextUrl.searchParams.get('dong') || undefined;
@@ -500,15 +489,15 @@ export async function GET(req: NextRequest) {
     const noNoise = req.nextUrl.searchParams.get('noNoise') === 'true'; // 노이즈 제거 옵션
     const noRound = req.nextUrl.searchParams.get('noRound') === 'true'; // 반올림 제거 옵션
 
-    console.log(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}, centerId=${centerId || '없음'}, centerIds=${centerIds || '없음'}, noNoise=${noNoise}, noRound=${noRound}`);
+    logger.info(`📊 요청 파라미터: precision=${p}, dong=${dong}, k=${k}, memberType=${memberType}, zoom=${zoom}, centerId=${centerId || '없음'}, centerIds=${centerIds || '없음'}, noNoise=${noNoise}, noRound=${noRound}`);
 
     // ✅ 인증 토큰 추출 (센터 관리자 필터링을 위해)
     // 클라이언트에서 전달된 Authorization 헤더를 그대로 서버로 전달
     const authHeader = req.headers.get('authorization');
     const authToken = authHeader?.replace('Bearer ', '') || undefined;
     
-    console.log('🔑 인증 토큰:', authToken ? '있음' : '없음 (최고관리자 또는 인증 불필요)');
-    console.log('🔑 Authorization 헤더:', authHeader ? '있음' : '없음');
+    logger.info('🔑 인증 토큰:', authToken ? '있음' : '없음 (최고관리자 또는 인증 불필요)');
+    logger.info('🔑 Authorization 헤더:', authHeader ? '있음' : '없음');
 
     // fetchAggBlocks는 실제 DB 데이터만 반환 (목업 데이터 사용 안 함)
     let rows: Row[] = [];
@@ -516,28 +505,28 @@ export async function GET(req: NextRequest) {
       // centerIds가 있으면 여러 센터에 대해 각각 호출하고 결과 합치기
       if (centerIds) {
         const centerIdArray = centerIds.split(',').map(id => id.trim()).filter(id => id);
-        console.log(`📊 여러 센터 필터링: ${centerIdArray.length}개 센터`, centerIdArray);
+        logger.info(`📊 여러 센터 필터링: ${centerIdArray.length}개 센터`, centerIdArray);
         
         // 서버 API가 센터 이름도 처리할 수 있으므로 그대로 전달
         const allRows: Row[] = [];
                for (const cId of centerIdArray) {
-                 console.log(`🔍 센터 데이터 조회: ${cId}`);
+                 logger.info(`🔍 센터 데이터 조회: ${cId}`);
                  const centerRows = await fetchAggBlocks(p, dong, memberType, authToken, cId, noNoise, noRound);
                  allRows.push(...centerRows);
-                 console.log(`  ✅ ${cId}: ${centerRows.length}개 rows`);
+                 logger.info(`  ✅ ${cId}: ${centerRows.length}개 rows`);
                }
                rows = allRows;
-               console.log(`📊 여러 센터 결과 합계: ${rows.length}개 rows`);
+               logger.info(`📊 여러 센터 결과 합계: ${rows.length}개 rows`);
              } else {
                rows = await fetchAggBlocks(p, dong, memberType, authToken, centerId, noNoise, noRound); // ✅ centerId, noNoise, noRound 전달
              }
     } catch (fetchError) {
-      console.error('❌ fetchAggBlocks 호출 오류:', fetchError);
-      console.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
+      logger.error('❌ fetchAggBlocks 호출 오류:', fetchError);
+      logger.warn('⚠️ 목업 데이터 사용하지 않음 - 빈 배열 반환');
       rows = []; // ⚠️ 목업 데이터 반환하지 않음
     }
     
-    console.log(`📊 fetchAggBlocks 결과: ${rows.length}개 rows`);
+    logger.info(`📊 fetchAggBlocks 결과: ${rows.length}개 rows`);
     
     // 정밀도별 구역 분할 (블록/건물 단위로 더 세밀하게)
     // ⚠️ 조정: 줌 14부터 스팟이 분리되도록 설정 (이전: 줌 16부터)
@@ -583,7 +572,7 @@ export async function GET(req: NextRequest) {
 
     for (const r of rows) {
       const { latitude, longitude } = ngeohash.decode(r.geohash);
-      console.log(`📍 지오해시 ${r.geohash} → 좌표: (${latitude}, ${longitude}), 센터: ${r.center_id}`);
+      logger.info(`📍 지오해시 ${r.geohash} → 좌표: (${latitude}, ${longitude}), 센터: ${r.center_id}`);
       
       if (dong && !insideBBox(longitude, latitude)) continue; // 간단 bbox clip
       
@@ -643,7 +632,7 @@ export async function GET(req: NextRequest) {
       if (totalWeight > 0) {
         aggregation.lat = weightedLat / totalWeight;
         aggregation.lng = weightedLng / totalWeight;
-        console.log(`📍 가중 평균 중심점 계산: ${key} → (${aggregation.lat.toFixed(6)}, ${aggregation.lng.toFixed(6)}), 총 ${aggregation.blocks.length}개 블록, 총 ${totalWeight}명`);
+        logger.info(`📍 가중 평균 중심점 계산: ${key} → (${aggregation.lat.toFixed(6)}, ${aggregation.lng.toFixed(6)}), 총 ${aggregation.blocks.length}개 블록, 총 ${totalWeight}명`);
       } else {
         // 가중치가 0인 경우 첫 번째 블록의 좌표 사용 (예외 처리)
         const firstBlock = aggregation.blocks[0];
@@ -651,7 +640,7 @@ export async function GET(req: NextRequest) {
           const { latitude, longitude } = ngeohash.decode(firstBlock.geohash);
           aggregation.lat = latitude;
           aggregation.lng = longitude;
-          console.warn(`⚠️ 가중치가 0이므로 첫 번째 블록 좌표 사용: ${key}`);
+          logger.warn(`⚠️ 가중치가 0이므로 첫 번째 블록 좌표 사용: ${key}`);
         }
       }
     }
@@ -673,10 +662,10 @@ export async function GET(req: NextRequest) {
     // ⚠️ 위에서 이미 가중 평균으로 중심점을 계산했으므로 중복 계산 제거
     // 모든 정밀도에 대해 동일한 가중 평균 방식 사용 (각 블록의 실제 인원수 기반)
     for (const [key, aggregation] of byAggregation.entries()) {
-      console.log(`📍 중심점 계산 완료: ${key} (센터: ${aggregation.centerId}, 정밀도 ${aggregationPrecision}, ${getAdministrativeUnit(aggregationPrecision)}) → (${aggregation.lat.toFixed(6)}, ${aggregation.lng.toFixed(6)})`);
+      logger.info(`📍 중심점 계산 완료: ${key} (센터: ${aggregation.centerId}, 정밀도 ${aggregationPrecision}, ${getAdministrativeUnit(aggregationPrecision)}) → (${aggregation.lat.toFixed(6)}, ${aggregation.lng.toFixed(6)})`);
     }
 
-    console.log(`🔢 행정단위별 집계 (줌 ${zoom}): ${byAggregation.size}개 구역 (${getAdministrativeUnit(aggregationPrecision)})`);
+    logger.info(`🔢 행정단위별 집계 (줌 ${zoom}): ${byAggregation.size}개 구역 (${getAdministrativeUnit(aggregationPrecision)})`);
     
     // 정밀도별 구역 분할 상태 로깅 (블록/건물 단위 기준)
     let adminLevel: string;
@@ -696,20 +685,20 @@ export async function GET(req: NextRequest) {
       adminLevel = 'city'; // 시 단위
     }
     
-    console.log(`🏛️ 정밀도별 구역 분할: ${adminLevel} (줌 ${zoom})`);
-    console.log(`🎯 구역 단위: 정밀도 ${aggregationPrecision}자리 (${getAdministrativeUnit(aggregationPrecision)})`);
-    console.log(`📍 정밀도별 구역 중심점 계산: 지번주소 단위 기준`);
+    logger.info(`🏛️ 정밀도별 구역 분할: ${adminLevel} (줌 ${zoom})`);
+    logger.info(`🎯 구역 단위: 정밀도 ${aggregationPrecision}자리 (${getAdministrativeUnit(aggregationPrecision)})`);
+    logger.info(`📍 정밀도별 구역 중심점 계산: 지번주소 단위 기준`);
     
     // 집계 결과 상세 로깅
-    console.log(`🔍 정밀도별 구역 분할 분석:`);
-    console.log(`   - 줌 레벨: ${zoom} → 정밀도 ${aggregationPrecision}자리 (${getAdministrativeUnit(aggregationPrecision)})`);
-    console.log(`   - 총 ${byAggregation.size}개 구역으로 분할됨`);
-    console.log(`   - 각 구역은 ${aggregationPrecision}자리 지오해시로 그룹화됨`);
-    console.log(`   - 동그라미 개수 = 정밀도별 구역 개수 (${byAggregation.size}개)`);
-    console.log(`   - ${getAdministrativeUnit(aggregationPrecision)} 단위로 구역 분할`);
+    logger.info(`🔍 정밀도별 구역 분할 분석:`);
+    logger.info(`   - 줌 레벨: ${zoom} → 정밀도 ${aggregationPrecision}자리 (${getAdministrativeUnit(aggregationPrecision)})`);
+    logger.info(`   - 총 ${byAggregation.size}개 구역으로 분할됨`);
+    logger.info(`   - 각 구역은 ${aggregationPrecision}자리 지오해시로 그룹화됨`);
+    logger.info(`   - 동그라미 개수 = 정밀도별 구역 개수 (${byAggregation.size}개)`);
+    logger.info(`   - ${getAdministrativeUnit(aggregationPrecision)} 단위로 구역 분할`);
     
     for (const [key, agg] of byAggregation.entries()) {
-      console.log(`📍 구역 ${key} (센터: ${agg.centerId}): ${agg.blocks.length}개 블록, ${agg.count}명, 중심 (${agg.lat.toFixed(6)}, ${agg.lng.toFixed(6)})`);
+      logger.info(`📍 구역 ${key} (센터: ${agg.centerId}): ${agg.blocks.length}개 블록, ${agg.count}명, 중심 (${agg.lat.toFixed(6)}, ${agg.lng.toFixed(6)})`);
     }
 
     // ⚠️ 중요: 센터별 별도 스팟 생성 (k-익명 + 노이즈 + 반올림)
@@ -741,7 +730,7 @@ export async function GET(req: NextRequest) {
 
       // 유효성 검사
       if (!aggregationKey || typeof obj.lat !== 'number' || typeof obj.lng !== 'number' || !obj.centerId) {
-        console.warn('⚠️ 유효하지 않은 스팟 데이터 스킵:', { aggregationKey, lat: obj.lat, lng: obj.lng, centerId: obj.centerId });
+        logger.warn('⚠️ 유효하지 않은 스팟 데이터 스킵:', { aggregationKey, lat: obj.lat, lng: obj.lng, centerId: obj.centerId });
         continue;
       }
 
@@ -771,7 +760,7 @@ export async function GET(req: NextRequest) {
       const finalLat = weightedCenter.lat + offsetLat;
       const finalLng = weightedCenter.lng + offsetLng;
       
-      console.log(`📍 스팟 좌표 (가중 평균 중심점 사용): ${obj.centerId} → 가중 평균 (${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}) → 최종 (${finalLat.toFixed(6)}, ${finalLng.toFixed(6)}), ${obj.blocks.length}개 블록 합침`);
+      logger.info(`📍 스팟 좌표 (가중 평균 중심점 사용): ${obj.centerId} → 가중 평균 (${obj.lat.toFixed(6)}, ${obj.lng.toFixed(6)}) → 최종 (${finalLat.toFixed(6)}, ${finalLng.toFixed(6)}), ${obj.blocks.length}개 블록 합침`);
       
       // ⚠️ 중요: dominantCenter는 서버에서 센터 이름으로 변환되어 전달됨
       // 하지만 여기서는 obj.centerId가 센터 ID이므로, 서버 응답에서 센터 이름을 가져와야 함
@@ -794,11 +783,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    console.log(`🎯 최종 스팟: ${spots.length}개 (숨김: ${hiddenBlocks}개)`);
-    console.log(`📊 원본 총 인원: ${totalOriginalCount}명 → 근사 총 인원: ${totalApproxCount}명`);
+    logger.info(`🎯 최종 스팟: ${spots.length}개 (숨김: ${hiddenBlocks}개)`);
+    logger.info(`📊 원본 총 인원: ${totalOriginalCount}명 → 근사 총 인원: ${totalApproxCount}명`);
 
-    console.log(`✅ 최종 spots 생성: ${spots.length}개`);
-    console.log(`📊 spots 샘플:`, spots.length > 0 ? spots[0] : '없음');
+    logger.info(`✅ 최종 spots 생성: ${spots.length}개`);
+    logger.info(`📊 spots 샘플:`, spots.length > 0 ? spots[0] : '없음');
 
     return NextResponse.json({ 
       success: true,
@@ -830,12 +819,12 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ 지오해시 블록 스팟 API 오류:', error);
-    console.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
-    console.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
+    logger.error('❌ 지오해시 블록 스팟 API 오류:', error);
+    logger.error('❌ 에러 상세:', error instanceof Error ? error.message : String(error));
+    logger.error('❌ 에러 스택:', error instanceof Error ? error.stack : '');
     
     // 에러 발생 시 빈 데이터 반환 (목업 데이터 사용 안 함)
-    console.error('❌ 지오해시 블록 스팟 API 오류:', error);
+    logger.error('❌ 지오해시 블록 스팟 API 오류:', error);
     return NextResponse.json({
       success: false,
       error: '지오해시 블록 스팟 데이터를 가져오는 중 오류가 발생했습니다.',

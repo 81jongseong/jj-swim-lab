@@ -17,6 +17,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -40,6 +41,7 @@ import StrokesSelectionSection from '@/components/swimlab/member-variables/Strok
 import TrainingScheduleSection from '@/components/swimlab/member-variables/TrainingScheduleSection';
 import { generateWeeklyPlan, type Input as EngineInput } from '@/lib/swimlab/engine-v31';
 import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
+import { LoadingState } from '@/components/common';
 
 // 타입 정의
 interface HealthInput {
@@ -189,7 +191,7 @@ export default function HealthInputPage() {
           }));
         }
       } catch (error) {
-        console.error('건강 정보 불러오기 실패:', error);
+        logger.error('건강 정보 불러오기 실패:', error);
       } finally {
         setLoading(false);
       }
@@ -373,7 +375,18 @@ export default function HealthInputPage() {
     const hasDyslipidemia = (healthData.vitals.totalCholesterol && healthData.vitals.totalCholesterol >= 240) || 
                             (healthData.vitals.ldlCholesterol && healthData.vitals.ldlCholesterol >= 160);
     
-    const recommendations = [];
+    interface Recommendation {
+      icon: string;
+      type: 'danger' | 'warning' | 'info';
+      title: string;
+      intensity: string;
+      duration: string;
+      avoid: string[];
+      recommend: string[];
+      detail: string;
+    }
+
+    const recommendations: Recommendation[] = [];
     let baseIntensity = 100; // 기본 강도 100%
     
     // 비만 관련 권장사항 (WHO/ACSM 기반)
@@ -541,7 +554,7 @@ export default function HealthInputPage() {
     }
     
     // 복합 질환 요약 추가
-    const conditions = [];
+    const conditions: string[] = [];
     if (bmi >= 30) conditions.push('고도비만');
     else if (bmi >= 25) conditions.push('경도비만');
     else if (bmi >= 23) conditions.push('과체중');
@@ -585,11 +598,11 @@ export default function HealthInputPage() {
     setIsSaving(true);
     try {
       // TODO: API 호출
-      console.log('건강정보 저장:', healthData);
+      logger.info('건강정보 저장:', healthData);
       alert('건강정보가 저장되었습니다! 대시보드에서 프로그램을 생성할 수 있습니다.');
       router.push('/dashboard');
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
@@ -601,7 +614,7 @@ export default function HealthInputPage() {
     setIsSaving(true);
     try {
       // 1. 건강정보 저장
-      console.log('🏥 건강정보:', healthData);
+      logger.info('🏥 건강정보:', healthData);
       
       // 2. CSS 설정 (입력값 또는 레벨 기반 추정)
       const strokeCSS: Record<string, number> = {};
@@ -648,7 +661,7 @@ export default function HealthInputPage() {
       // 70% 강도 (고혈압1기+고지혈증) → 'tired'로 매핑
       // 이렇게 하면 페이스가 +3초 느려지고 휴식이 +5~10초 늘어나서 시간이 늘어남
 
-      console.log('⏰ 운동 설정:', {
+      logger.info('⏰ 운동 설정:', {
         sessionDuration,
         baseIntensity: healthAnalysis.baseIntensity,
         dayCondition,
@@ -684,7 +697,7 @@ export default function HealthInputPage() {
         labs: healthData.labs // eGFR, HbA1c 등 검사실 수치 전달
       };
       
-      console.log('🏊 엔진 입력:', engineInput);
+      logger.info('🏊 엔진 입력:', engineInput);
       
       // 4. 🎯 시간 기반 프로그램 생성 (v35 엔진 테스트)
       const generatedProgram = generateTimeBasedProgram({
@@ -702,10 +715,10 @@ export default function HealthInputPage() {
         cssMeasurementPoolLength: healthData.swim_profile.cssMeasurementPoolLength || 25 // 🏊 CSS 측정 풀 길이
       });
       
-      console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);
-      console.log('📊 세트 개수:', generatedProgram?.sets?.length || 0);
-      console.log('📏 총 거리:', generatedProgram?.totalMeters || 0);
-      console.log('⏱️ 총 시간:', generatedProgram?.estimatedMinutes || 0);
+      logger.info('✅ 오늘의 프로그램 (v35):', generatedProgram);
+      logger.info('📊 세트 개수:', generatedProgram?.sets?.length || 0);
+      logger.info('📏 총 거리:', generatedProgram?.totalMeters || 0);
+      logger.info('⏱️ 총 시간:', generatedProgram?.estimatedMinutes || 0);
       
       // 5. 프로그램 데이터 저장
       const programData = {
@@ -728,7 +741,7 @@ export default function HealthInputPage() {
       localStorage.removeItem('guest-daily-program-v33');
       localStorage.removeItem('guest-daily-program-v34');
       
-      console.log('💾 프로그램 저장:', { 
+      logger.info('💾 프로그램 저장:', { 
         key: 'guest-daily-program-v35', 
         date: programData.date,
         sets: generatedProgram.sets.length,
@@ -742,8 +755,8 @@ export default function HealthInputPage() {
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/guest/programs');
     } catch (error) {
-      console.error('❌ 프로그램 생성 오류:', error);
-      console.error('❌ 오류 상세:', {
+      logger.error('❌ 프로그램 생성 오류:', error);
+      logger.error('❌ 오류 상세:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         error
@@ -1413,10 +1426,7 @@ export default function HealthInputPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">건강 정보를 불러오는 중...</p>
-          </div>
+          <LoadingState message="건강 정보를 불러오는 중..." size="lg" />
         </div>
       </div>
     );

@@ -69,6 +69,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useAuth } from 'hooks/useAuth';
 
@@ -158,7 +159,7 @@ const ChecklistManager = () => {
         setLessonPlans(data.data || []);
       }
     } catch (error) {
-      console.error('데이터 로딩 실패:', error);
+      logger.error('데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -189,7 +190,7 @@ const ChecklistManager = () => {
         setSelectedStudent('');
       }
     } catch (error) {
-      console.error('체크리스트 생성 실패:', error);
+      logger.error('체크리스트 생성 실패:', error);
     }
   };
 
@@ -207,7 +208,7 @@ const ChecklistManager = () => {
         await loadData();
       }
     } catch (error) {
-      console.error('체크리스트 아이템 업데이트 실패:', error);
+      logger.error('체크리스트 아이템 업데이트 실패:', error);
     }
   };
 
@@ -228,7 +229,7 @@ const ChecklistManager = () => {
         await loadData();
       }
     } catch (error) {
-      console.error('체크리스트 완료 처리 실패:', error);
+      logger.error('체크리스트 완료 처리 실패:', error);
     }
   };
 

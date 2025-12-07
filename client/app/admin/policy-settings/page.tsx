@@ -26,6 +26,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,7 @@ import {
   validatePolicy,
   updatePolicy
 } from '@/lib/decline-policy';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 export default function PolicySettingsPage() {
   const { user, loading } = useAuth();
@@ -52,6 +54,19 @@ export default function PolicySettingsPage() {
   // 테스트 시나리오
   const [testScenarios, setTestScenarios] = useState<any[]>([]);
   const [showTestResults, setShowTestResults] = useState(false);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   
   // 인증 확인
   useEffect(() => {
@@ -86,7 +101,7 @@ export default function PolicySettingsPage() {
       // 테스트 시나리오 생성
       setTestScenarios(createTestScenarios());
     } catch (error) {
-      console.error('정책 로딩 오류:', error);
+      logger.error('정책 로딩 오류:', error);
     }
   };
 
@@ -117,7 +132,7 @@ export default function PolicySettingsPage() {
       setHasChanges(false);
       alert('정책이 성공적으로 저장되었습니다.');
     } catch (error) {
-      console.error('정책 저장 오류:', error);
+      logger.error('정책 저장 오류:', error);
       alert('정책 저장 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
@@ -126,10 +141,16 @@ export default function PolicySettingsPage() {
 
   // 정책 초기화
   const resetPolicy = () => {
-    if (confirm('변경사항을 취소하시겠습니까?')) {
-      setPolicy(originalPolicy);
-      setErrors([]);
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '변경사항을 취소하시겠습니까?',
+      variant: 'warning',
+      onConfirm: () => {
+        setPolicy(originalPolicy);
+        setErrors([]);
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   // 테스트 시나리오 실행
@@ -145,10 +166,7 @@ export default function PolicySettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -160,13 +178,10 @@ export default function PolicySettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* 헤더 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">정책 설정</h1>
-              <p className="text-gray-600 mt-1">하락 판단 정책 및 가시성 설정 관리</p>
-            </div>
+        <PageHeader
+          title="정책 설정"
+          description="하락 판단 정책 및 가시성 설정 관리"
+          actions={
             <div className="flex items-center gap-3">
               {hasChanges && (
                 <span className="text-sm text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
@@ -188,19 +203,15 @@ export default function PolicySettingsPage() {
                 {saving ? '저장 중...' : '저장'}
               </button>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* 오류 메시지 */}
         {errors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <h3 className="text-red-800 font-semibold mb-2">정책 설정 오류</h3>
-            <ul className="text-red-700 text-sm space-y-1">
-              {errors.map((error, index) => (
-                <li key={index}>• {error}</li>
-              ))}
-            </ul>
-          </div>
+          <ErrorState 
+            message={`정책 설정 오류:\n${errors.map((error, index) => `• ${error}`).join('\n')}`}
+            className="mb-6"
+          />
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -402,6 +413,18 @@ export default function PolicySettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

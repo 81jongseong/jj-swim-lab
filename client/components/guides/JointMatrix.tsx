@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { ChevronDown, Filter, SortAsc } from 'lucide-react';
 import { Condition, MatrixRow, StrokeKey, SwimJointGuideData, MatrixScore } from '@/content/swim-joint-guide/types';
 

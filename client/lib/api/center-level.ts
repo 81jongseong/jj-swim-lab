@@ -87,6 +87,7 @@
  */
 
 import { handleApiResponse } from './utils';
+import { logger } from '@/lib/logger';
 
 export interface CenterLevel {
   _id: string;
@@ -114,7 +115,7 @@ export interface CenterLevelUpdateRequest {
 // 센터별 레벨 설정 조회
 export const getCenterLevels = async (centerId: string): Promise<CenterLevel> => {
   try {
-    console.log('🔍 API 호출:', `/api/center-levels/${centerId}`);
+    logger.api('센터 레벨 조회 API 호출', { centerId, endpoint: `/api/center-levels/${centerId}` });
     
     const response = await fetch(`/api/center-levels/${centerId}`, {
       method: 'GET',
@@ -124,7 +125,7 @@ export const getCenterLevels = async (centerId: string): Promise<CenterLevel> =>
       }
     });
     
-    console.log('📡 API 응답 상태:', response.status);
+    logger.api('센터 레벨 조회 API 응답 상태', { status: response.status });
     
     if (!response.ok) {
       if (response.status === 404) {
@@ -134,11 +135,11 @@ export const getCenterLevels = async (centerId: string): Promise<CenterLevel> =>
     }
     
     const data = await response.json();
-    console.log('✅ API 응답 데이터:', data);
+    logger.api('센터 레벨 조회 API 응답 데이터', data);
     
     return data;
   } catch (error) {
-    console.error('❌ getCenterLevels 에러:', error);
+    logger.error('센터 레벨 조회 실패:', error);
     throw error;
   }
 };

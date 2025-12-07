@@ -18,15 +18,16 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Users, Calendar, Star, Eye, Search, List } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import withAuth from '@/components/withAuth';
 import CourseDetailModal from '@/components/center-admin/CourseDetailModal';
 import WeeklyCalendar from '@/components/center-admin/WeeklyCalendar';
-import { CardGrid } from '@/components/common';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
 
 interface InstructorCourse {
   _id: string;
@@ -75,14 +76,14 @@ function InstructorCoursesManagement() {
       setIsLoading(true);
       
       if (!user || !user._id) {
-        console.error('사용자 정보가 없습니다.');
+        logger.error('사용자 정보가 없습니다.');
         setCourses([]);
         return;
       }
 
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('토큰이 없습니다.');
+        logger.error('토큰이 없습니다.');
         setCourses([]);
         return;
       }
@@ -99,7 +100,7 @@ function InstructorCoursesManagement() {
       }
 
       const result = await response.json();
-      console.log('📚 강사 강의 목록 API 응답:', result);
+      logger.info('📚 강사 강의 목록 API 응답:', result);
 
       if (result.success && result.data) {
         const coursesData: InstructorCourse[] = result.data.map((course: any) => {
@@ -130,7 +131,7 @@ function InstructorCoursesManagement() {
             });
           }
           
-          console.log('📅 강의 schedule 변환:', {
+          logger.info('📅 강의 schedule 변환:', {
             courseName: course.name,
             originalSchedule: course.schedule,
             convertedSchedule: schedule
@@ -161,13 +162,13 @@ function InstructorCoursesManagement() {
         });
 
         setCourses(coursesData);
-        console.log('✅ 강의 목록 로드 완료:', coursesData.length, '개');
+        logger.info('✅ 강의 목록 로드 완료:', coursesData.length, '개');
       } else {
-        console.warn('강의 데이터가 없습니다.');
+        logger.warn('강의 데이터가 없습니다.');
         setCourses([]);
       }
     } catch (error) {
-      console.error('강의 목록 로드 실패:', error);
+      logger.error('강의 목록 로드 실패:', error);
       setCourses([]);
     } finally {
       setIsLoading(false);
@@ -286,8 +287,7 @@ function InstructorCoursesManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">강의 목록을 불러오는 중...</span>
+        <LoadingState message="강의 목록을 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -296,10 +296,10 @@ function InstructorCoursesManagement() {
     <div className="container mx-auto p-6 space-y-6">
       <Card className="border border-gray-200">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <CardTitle className="text-3xl font-bold text-gray-900">강의 관리</CardTitle>
-            <p className="text-gray-600 mt-2">강의 목록을 확인하고 관리하세요.</p>
-          </div>
+          <PageHeader
+            title="강의 관리"
+            description="강의 목록을 확인하고 관리하세요."
+          />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('calendar')}

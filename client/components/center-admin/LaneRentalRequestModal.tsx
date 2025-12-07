@@ -6,12 +6,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '../Button';
-import { Input } from '../ui/input';
-import Textarea from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Button } from '@/components/ui';
+import { Input } from '../ui';
+// Textarea와 Select는 index.ts에서 export되지 않으므로 직접 import
+import Textarea from '../ui/Textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 import { X, Calendar, Clock, MapPin, Target } from 'lucide-react';
 
 interface LaneRentalRequestModalProps {
@@ -81,7 +83,7 @@ export default function LaneRentalRequestModal({
         setAvailability(data.data);
       }
     } catch (error) {
-      console.error('센터 가능시간 로딩 실패:', error);
+      logger.error('센터 가능시간 로딩 실패:', error);
     }
   };
 

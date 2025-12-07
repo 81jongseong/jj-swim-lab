@@ -10,7 +10,13 @@
  * - 반 체크리스트 생성 및 조회
  * - 학생별 진행도 데이터 관리
  * - 체크리스트 항목 완료 상태 업데이트
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/instructor/checklist/page.tsx
+ * - client/components/swimlab/ChecklistManager.tsx
  */
+
+import { logger } from '@/lib/logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -116,10 +122,10 @@ export const checklistApi = {
       }
       
       const result = await response.json();
-      console.log('API 응답:', result);
+      logger.api('반 목록 조회 API 응답', result);
       return result.data || result || [];
     } catch (error) {
-      console.error('반 목록 조회 실패:', error);
+      logger.error('반 목록 조회 실패:', error);
       throw error;
     }
   },
@@ -136,7 +142,7 @@ export const checklistApi = {
       const result = await response.json() as ChecklistCreateResponse;
       return result.checklist;
     } catch (error) {
-      console.error('체크리스트 생성 실패:', error);
+      logger.error('체크리스트 생성 실패:', error);
       throw error;
     }
   },
@@ -156,7 +162,7 @@ export const checklistApi = {
       const result = await response.json() as ChecklistGetResponse;
       return result.checklist || null;
     } catch (error) {
-      console.error('체크리스트 조회 실패:', error);
+      logger.error('체크리스트 조회 실패:', error);
       throw error;
     }
   },
@@ -174,7 +180,7 @@ export const checklistApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('체크리스트 항목 업데이트 실패:', error);
+      logger.error('체크리스트 항목 업데이트 실패:', error);
       throw error;
     }
   },
@@ -194,7 +200,7 @@ export const checklistApi = {
       const result = await response.json();
       return result.data || result || [];
     } catch (error) {
-      console.error('학생 진행도 조회 실패:', error);
+      logger.error('학생 진행도 조회 실패:', error);
       throw error;
     }
   },
@@ -212,7 +218,7 @@ export const checklistApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('학생 진행도 업데이트 실패:', error);
+      logger.error('학생 진행도 업데이트 실패:', error);
       throw error;
     }
   },
@@ -229,7 +235,7 @@ export const checklistApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
-      console.error('체크리스트 삭제 실패:', error);
+      logger.error('체크리스트 삭제 실패:', error);
       throw error;
     }
   },
@@ -250,7 +256,7 @@ export const checklistApi = {
       const result = await response.json();
       return result.data || result;
     } catch (error) {
-      console.error('체크리스트 항목 순서 변경 실패:', error);
+      logger.error('체크리스트 항목 순서 변경 실패:', error);
       throw error;
     }
   },
@@ -271,7 +277,7 @@ export const checklistApi = {
       const result = await response.json();
       return result.data || result;
     } catch (error) {
-      console.error('체크리스트 항목 메시지 추가 실패:', error);
+      logger.error('체크리스트 항목 메시지 추가 실패:', error);
       throw error;
     }
   },
@@ -288,7 +294,7 @@ export const checklistApi = {
       const result = await response.json() as ChecklistCreateResponse;
       return result.checklist;
     } catch (error) {
-      console.error('개인레슨 체크리스트 생성 실패:', error);
+      logger.error('개인레슨 체크리스트 생성 실패:', error);
       throw error;
     }
   },
@@ -305,7 +311,7 @@ export const checklistApi = {
       const result = await response.json();
       return result.checklist;
     } catch (error) {
-      console.error('체크리스트 항목 숨김 설정 실패:', error);
+      logger.error('체크리스트 항목 숨김 설정 실패:', error);
       throw error;
     }
   },
@@ -322,7 +328,7 @@ export const checklistApi = {
       const result = await response.json();
       return result.checklist;
     } catch (error) {
-      console.error('커스텀 항목 추가 실패:', error);
+      logger.error('커스텀 항목 추가 실패:', error);
       throw error;
     }
   },
@@ -352,7 +358,7 @@ export const checklistApi = {
         hiddenItems: result.hiddenItems
       };
     } catch (error) {
-      console.error('체크리스트 조회 실패:', error);
+      logger.error('체크리스트 조회 실패:', error);
       throw error;
     }
   },

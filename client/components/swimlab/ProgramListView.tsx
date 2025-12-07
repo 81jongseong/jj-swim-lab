@@ -18,6 +18,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { 
   listPrograms, 
   deleteProgram, 
@@ -28,7 +29,7 @@ import {
 import { EVIDENCE } from '@/types/evidence';
 import { apiClient } from '@/utils/api';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import CompletionInputModal, { type CompletionData } from '@/components/swimlab/CompletionInputModal';
 import DayConditionInputModal, { type DayConditionData } from '@/components/swimlab/DayConditionInputModal';
 import ConditionDetailModal from '@/components/swimlab/ConditionDetailModal';
@@ -88,24 +89,24 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
 
   const loadTrainingMethodsAndDrills = async () => {
     try {
-      console.log('🔄 훈련법/드릴 로드 시작...');
+      logger.info('🔄 훈련법/드릴 로드 시작...');
       
       // 훈련법 로드
       const methodsRes = await apiClient.get('/api/swim-training-methods?isActive=true');
-      console.log('📊 훈련법 응답:', methodsRes);
+      logger.info('📊 훈련법 응답:', methodsRes);
       setTrainingMethods(Array.isArray(methodsRes) ? methodsRes : ((methodsRes as any).data || []));
       
       // 드릴 로드
       const drillsRes = await apiClient.get('/api/swim-drills?isActive=true');
-      console.log('🎯 드릴 응답:', drillsRes);
+      logger.info('🎯 드릴 응답:', drillsRes);
       setDrills(Array.isArray(drillsRes) ? drillsRes : ((drillsRes as any).data || []));
       
-      console.log('✅ 훈련법/드릴 로드 완료:', {
+      logger.info('✅ 훈련법/드릴 로드 완료:', {
         trainingMethods: Array.isArray(methodsRes) ? methodsRes.length : ((methodsRes as any).data?.length || 0),
         drills: Array.isArray(drillsRes) ? drillsRes.length : ((drillsRes as any).data?.length || 0)
       });
     } catch (error) {
-      console.error('❌ 훈련법/드릴 로드 오류:', error);
+      logger.error('❌ 훈련법/드릴 로드 오류:', error);
       setErrorMessage('훈련법/드릴 데이터를 불러오는 중 오류가 발생했습니다. 프로그램 수정 기능이 제한될 수 있습니다.');
       setTimeout(() => setErrorMessage(null), 5000);
       // 오류 시에도 빈 배열로 초기화하여 UI가 표시되도록
@@ -121,17 +122,17 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       
       // 선택된 회원이 있으면 해당 회원의 프로그램만 가져오기
       if (selectedAthleteId) {
-        console.log(`📥 회원 ${selectedAthleteId}의 프로그램 로드 중...`);
+        logger.debug(`회원 ${selectedAthleteId}의 프로그램 로드 중`);
         const response = await apiClient.get(`/api/swim-programs/athlete/${selectedAthleteId}?limit=50`) as any;
         // API 응답 구조: { count: 3, programs: [...] }
         serverPrograms = response.programs || response.data?.programs || [];
-        console.log(`✅ ${serverPrograms.length}개 프로그램 로드됨`, serverPrograms);
+        logger.success(`${serverPrograms.length}개 프로그램 로드됨`, serverPrograms);
       } else {
         // 회원 선택 안 했을 때는 모든 프로그램 조회
-        console.log('📥 모든 프로그램 로드 중...');
+        logger.debug('모든 프로그램 로드 중');
         const response = await apiClient.get(`/api/swim-programs/all?limit=100`) as any;
         serverPrograms = response.programs || response.data?.programs || [];
-        console.log(`✅ 전체 ${serverPrograms.length}개 프로그램 로드됨`);
+        logger.success(`전체 ${serverPrograms.length}개 프로그램 로드됨`);
       }
       
       // localStorage와 병합 (중복 제거)
@@ -181,7 +182,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       
       setPrograms(allPrograms);
     } catch (error) {
-      console.error('프로그램 로드 실패:', error);
+      logger.error('프로그램 로드 실패:', error);
       setErrorMessage('프로그램을 불러오는 중 오류가 발생했습니다. 로컬 데이터를 사용합니다.');
       setTimeout(() => setErrorMessage(null), 5000);
       // 실패 시 localStorage만 사용
@@ -232,31 +233,31 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
     try {
       // 서버에서 삭제
       const programToDelete = programs.find(p => p.id === id);
-      console.log('🔍 삭제 대상 프로그램:', programToDelete);
+      logger.info('🔍 삭제 대상 프로그램:', programToDelete);
       
       if (programToDelete && programToDelete._id) {
-        console.log('🗑️ 서버에서 프로그램 삭제 시도:', programToDelete._id);
+        logger.info('🗑️ 서버에서 프로그램 삭제 시도:', programToDelete._id);
         
         try {
           const response = await apiClient.delete(`/api/swim-programs/${programToDelete._id}`);
-          console.log('📥 삭제 API 응답:', response);
+          logger.info('📥 삭제 API 응답:', response);
           
           if (response.success) {
-            console.log('✅ 서버 삭제 성공');
+            logger.info('✅ 서버 삭제 성공');
             alert('프로그램이 삭제되었습니다.');
           } else {
-            console.warn('⚠️ 서버 삭제 실패:', response);
+            logger.warn('⚠️ 서버 삭제 실패:', response);
             alert('서버에서 프로그램 삭제에 실패했습니다.');
             return;
           }
         } catch (error) {
-          console.error('❌ 삭제 API 호출 오류:', error);
+          logger.error('❌ 삭제 API 호출 오류:', error);
           setErrorMessage('프로그램 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           setTimeout(() => setErrorMessage(null), 5000);
           return;
         }
       } else {
-        console.log('⚠️ 서버 ID 없음 (로컬 전용 프로그램), 로컬만 삭제');
+        logger.info('⚠️ 서버 ID 없음 (로컬 전용 프로그램), 로컬만 삭제');
         alert('로컬 프로그램이 삭제됩니다.');
       }
       
@@ -267,11 +268,11 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
     setSelectedProgram(null);
       
       // 목록 새로고침
-      console.log('🔄 프로그램 목록 새로고침...');
+      logger.debug('프로그램 목록 새로고침');
       await loadProgramsFromServer();
       
     } catch (error) {
-      console.error('❌ 프로그램 삭제 실패:', error);
+      logger.error('프로그램 삭제 실패:', error);
       setErrorMessage('프로그램 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
       setTimeout(() => setErrorMessage(null), 5000);
     }
@@ -285,18 +286,18 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       
       // 레이스 프로그램 phases 내부 날짜인 경우
       if (racePhaseIdx !== null && raceWeekIdx !== null && raceDayIdx !== null) {
-        console.log('💾 레이스 프로그램 완료율 저장 (phases):', { 
+        logger.info('💾 레이스 프로그램 완료율 저장 (phases):', { 
           programId, phaseIdx: racePhaseIdx, weekIdx: raceWeekIdx, dayIdx: raceDayIdx, data 
         });
         
         // 완료율 계산
         let completionRate = 0;
         if (data.completionType === 'detailed' && data.detailedCompletion) {
-          const totalPlanned = data.detailedCompletion.sets.reduce((sum, set) => 
-            sum + (set.planned.distance * set.planned.reps), 0
+          const totalPlanned = data.detailedCompletion.sets.reduce((sum, set: any) => 
+            sum + ((set.planned?.distance || 0) * (set.planned?.reps || 0)), 0
           );
-          const totalActual = data.detailedCompletion.sets.reduce((sum, set) => 
-            sum + (set.actual.completed ? (set.actual.distance * set.actual.reps) : 0), 0
+          const totalActual = data.detailedCompletion.sets.reduce((sum, set: any) => 
+            sum + (set.actual?.completed ? ((set.actual?.distance || 0) * (set.actual?.reps || 0)) : 0), 0
           );
           completionRate = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
         } else if (data.simpleCompletion) {
@@ -330,14 +331,14 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       // 일반 세션인 경우
       if (completionSessionIdx === null) return;
       
-      console.log('💾 완료율 저장 시도:', { programId, sessionIdx: completionSessionIdx, data });
+      logger.info('💾 완료율 저장 시도:', { programId, sessionIdx: completionSessionIdx, data });
       
       const response = await apiClient.post(
         `/api/swim-programs/${programId}/sessions/${completionSessionIdx}/completion`,
         data
       );
 
-      console.log('🔍 서버 응답 구조:', {
+      logger.debug('서버 응답 구조', {
         'response.data': (response as any).data,
         'response.data.data': (response as any).data?.data,
         'response.data.data.completionRate': (response as any).data?.data?.completionRate,
@@ -348,11 +349,11 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       // 완료율 계산: 상세 모드는 직접 계산, 간단 모드는 입력값 사용
       let completionRate = 0;
       if (data.completionType === 'detailed' && data.detailedCompletion) {
-        const totalPlanned = data.detailedCompletion.sets.reduce((sum, set) => 
-          sum + (set.planned.distance * set.planned.reps), 0
+        const totalPlanned = data.detailedCompletion.sets.reduce((sum, set: any) => 
+          sum + ((set.planned?.distance || 0) * (set.planned?.reps || 0)), 0
         );
-        const totalActual = data.detailedCompletion.sets.reduce((sum, set) => 
-          sum + (set.actual.completed ? (set.actual.distance * set.actual.reps) : 0), 0
+        const totalActual = data.detailedCompletion.sets.reduce((sum, set: any) => 
+          sum + (set.actual?.completed ? ((set.actual?.distance || 0) * (set.actual?.reps || 0)) : 0), 0
         );
         completionRate = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0;
       } else if (data.simpleCompletion) {
@@ -361,7 +362,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
         completionRate = (response as any).data?.data?.completionRate || 0;
       }
 
-      console.log('✅ 최종 완료율:', completionRate);
+      logger.success('최종 완료율', { completionRate });
       alert(`완료율 ${completionRate}%가 저장되었습니다!`);
       
       // 프로그램 목록 새로고침
@@ -384,7 +385,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
         setSelectedProgram(updatedProgram);
       }
     } catch (error) {
-      console.error('완료율 저장 오류:', error);
+      logger.error('완료율 저장 오류:', error);
       setErrorMessage('완료율 저장에 실패했습니다. 네트워크 연결을 확인해주세요.');
       setTimeout(() => setErrorMessage(null), 5000);
       throw error;
@@ -402,7 +403,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       
       // 레이스 프로그램 phases 내부 날짜인 경우
       if (racePhaseIdx !== null && raceWeekIdx !== null && raceDayIdx !== null) {
-        console.log('🌤️ 레이스 프로그램 당일 컨디션 저장 (phases):', { 
+        logger.debug('레이스 프로그램 당일 컨디션 저장 (phases)', { 
           programId, phaseIdx: racePhaseIdx, weekIdx: raceWeekIdx, dayIdx: raceDayIdx, data 
         });
         
@@ -431,14 +432,14 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
       // 일반 세션인 경우
       if (dayConditionSessionIdx === null) return;
       
-      console.log('🌤️ 당일 컨디션 저장 시도:', { programId, sessionIdx: dayConditionSessionIdx, data });
+      logger.debug('당일 컨디션 저장 시도', { programId, sessionIdx: dayConditionSessionIdx, data });
       
       const response = await apiClient.post(
         `/api/swim-programs/${programId}/sessions/${dayConditionSessionIdx}/day-condition`,
         data
       );
 
-      console.log('✅ 당일 컨디션 저장 성공:', response.data);
+      logger.success('당일 컨디션 저장 성공', response.data);
       alert('당일 컨디션이 저장되었습니다!');
       
       // 프로그램 목록 새로고침
@@ -459,7 +460,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
         setSelectedProgram(updatedProgram);
       }
     } catch (error) {
-      console.error('당일 컨디션 저장 오류:', error);
+      logger.error('당일 컨디션 저장 오류:', error);
       setErrorMessage('당일 컨디션 저장에 실패했습니다. 네트워크 연결을 확인해주세요.');
       setTimeout(() => setErrorMessage(null), 5000);
       throw error;
@@ -1537,7 +1538,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                       onChange={(e) => {
                         if (e.target.value) {
                           const selectedContent = e.target.value;
-                          console.log('🔽 드롭다운 선택:', selectedContent);
+                          logger.info('🔽 드롭다운 선택:', selectedContent);
                           
                           // 즉시 editedProgram에 적용
                           let updatedProgram = { ...editedProgram };
@@ -1548,7 +1549,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                             const day = newPhases[racePhaseIdx].weeklyPlans[raceWeekIdx].days[raceDayIdx];
                             if (day.sets && day.sets[editingSetIdx]) {
                               day.sets[editingSetIdx].desc = selectedContent;
-                              console.log('✅ 레이스 세트 즉시 수정:', selectedContent);
+                              logger.debug('레이스 세트 즉시 수정', selectedContent);
                             }
                             updatedProgram = {
                               ...editedProgram,
@@ -1561,10 +1562,10 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                             
                             if (session.sets) {
                               session.sets[editingSetIdx] = selectedContent;
-                              console.log('✅ sets 배열 즉시 수정:', selectedContent);
+                              logger.debug('sets 배열 즉시 수정', selectedContent);
                             } else if (session.blocks) {
                               session.blocks[editingSetIdx].description = selectedContent;
-                              console.log('✅ blocks 배열 즉시 수정:', selectedContent);
+                              logger.debug('blocks 배열 즉시 수정', selectedContent);
                             }
                             
                             updatedProgram = {
@@ -1579,7 +1580,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                           // 선택 초기화
                           e.target.value = '';
                           
-                          console.log('✅ 드롭다운 선택 즉시 적용 완료');
+                          logger.success('드롭다운 선택 즉시 적용 완료');
                         }
                       }}
                     >
@@ -1748,7 +1749,7 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                         setRaceWeekIdx(null);
                         setRaceDayIdx(null);
                         setTempSetContent('');
-                        console.log('✅ 세트 수정 완료, 모달 닫기');
+                        logger.info('✅ 세트 수정 완료, 모달 닫기');
                       }}
                       className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold"
                     >
@@ -1950,8 +1951,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                   try {
                     setIsSaving(true);
                     setSaveMessage(null);
-                    console.log('💾 [저장] 클릭 - 서버에 저장 시작');
-                    console.log('📤 저장할 데이터:', {
+                    logger.info('💾 [저장] 클릭 - 서버에 저장 시작');
+                    logger.info('📤 저장할 데이터:', {
                       id: editedProgram.id,
                       'sessions[0].blocks[3]': editedProgram.content?.sessions?.[0]?.blocks?.[3]?.description
                     });
@@ -1965,8 +1966,8 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                         content: editedProgram.content,
                         params: editedProgram.params
                       });
-                      console.log('✅ 서버에 프로그램 저장 완료:', editedProgram.id);
-                      console.log('📊 저장 응답:', (saveResponse as any).data?.content?.sessions?.[0]?.blocks?.[3]?.description);
+                      logger.info('✅ 서버에 프로그램 저장 완료:', editedProgram.id);
+                      logger.info('📊 저장 응답:', (saveResponse as any).data?.content?.sessions?.[0]?.blocks?.[3]?.description);
                     }
                     
                     // UI 업데이트 - 서버에서 다시 로드하고 수정된 프로그램 찾기
@@ -1974,12 +1975,12 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                     
                     // 서버에서 수정된 프로그램을 직접 조회
                     const updatedProgramResponse = await apiClient.get(`/api/swim-programs/${editedProgram.id}`) as any;
-                    console.log('📥 수정된 프로그램 다시 로드:', updatedProgramResponse);
+                    logger.info('📥 수정된 프로그램 다시 로드:', updatedProgramResponse);
                     
                     // selectedProgram을 서버에서 가져온 최신 데이터로 교체
                     const serverData = (updatedProgramResponse as any).data || updatedProgramResponse;
                     if (serverData) {
-                      console.log('🔍 서버 데이터 상세:', {
+                      logger.info('🔍 서버 데이터 상세:', {
                         content: (serverData as any).content,
                         sessions: (serverData as any).content?.sessions,
                         phases: (serverData as any).content?.phases
@@ -1998,13 +1999,13 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                         createdAt: (serverData as any).createdAt
                       } as SavedProgram;
                       
-                      console.log('🔄 freshProgram 생성:', freshProgram);
-                      console.log('🔍 freshProgram.content.sessions[0]:', freshProgram.content?.sessions?.[0]);
-                      console.log('🔍 freshProgram.content.sessions[0].sets:', freshProgram.content?.sessions?.[0]?.sets);
-                      console.log('🔍 freshProgram.content.sessions[0].blocks:', freshProgram.content?.sessions?.[0]?.blocks);
+                      logger.info('🔄 freshProgram 생성:', freshProgram);
+                      logger.info('🔍 freshProgram.content.sessions[0]:', freshProgram.content?.sessions?.[0]);
+                      logger.info('🔍 freshProgram.content.sessions[0].sets:', freshProgram.content?.sessions?.[0]?.sets);
+                      logger.info('🔍 freshProgram.content.sessions[0].blocks:', freshProgram.content?.sessions?.[0]?.blocks);
                       
                       setSelectedProgram(freshProgram);
-                      console.log('✅ selectedProgram 업데이트 완료');
+                      logger.info('✅ selectedProgram 업데이트 완료');
                     }
                     
                   setEditingSessionIdx(null);
@@ -2015,11 +2016,11 @@ export default function ProgramListView({ selectedAthleteId }: ProgramListViewPr
                     setTempSetContent('');
                   setIsEditing(false);
                     
-                    console.log('🔄 UI 업데이트 완료');
+                    logger.info('🔄 UI 업데이트 완료');
                   setSaveMessage({ type: 'success', text: '프로그램이 성공적으로 수정되었습니다!' });
                   setTimeout(() => setSaveMessage(null), 3000);
                   } catch (error) {
-                    console.error('❌ 프로그램 저장 오류:', error);
+                    logger.error('❌ 프로그램 저장 오류:', error);
                     setSaveMessage({ type: 'error', text: '프로그램 저장에 실패했습니다. 다시 시도해주세요.' });
                   } finally {
                     setIsSaving(false);

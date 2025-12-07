@@ -27,10 +27,11 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
-import Card from '@/components/ui/card';
-import Button from '@/components/ui/button';
+import { Card } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Badge } from '@/components/ui';
 
 // 레인 인터페이스
@@ -555,7 +556,7 @@ export default function LaneManager({
                   variant="primary"
                   onClick={() => {
                     setShowSettings(false);
-                    console.log('레인 설정 저장:', config);
+                    logger.info('레인 설정 저장:', config);
                   }}
                 >
                   설정 저장

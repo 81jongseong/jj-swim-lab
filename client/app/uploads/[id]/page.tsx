@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import apiClient from '../../../utils/api';
+import { LoadingState, ErrorState, PageHeader } from '@/components/common';
 
 export default function UploadDetailPage() {
   const params = useParams();
@@ -23,8 +24,20 @@ export default function UploadDetailPage() {
     load();
   }, [id]);
 
-  if (loading) return <div className="min-h-screen pt-16 p-6">로딩중...</div>;
-  if (error) return <div className="min-h-screen pt-16 p-6 text-red-600">{error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-16 p-6">
+        <LoadingState message="로딩 중..." size="lg" />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen pt-16 p-6">
+        <ErrorState message={error} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
   if (!data) return null;
 
   const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/uploads/${data._id}/download`;
@@ -32,7 +45,7 @@ export default function UploadDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-3xl mx-auto p-6 space-y-4 bg-white rounded shadow">
-        <h1 className="text-2xl font-semibold">업로드 상세</h1>
+        <PageHeader title="업로드 상세" />
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <div className="text-gray-500">파일명</div>

@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Clock, Calendar, Users, AlertCircle } from 'lucide-react';
@@ -91,7 +92,7 @@ export default function ExternalPersonalLessonRequestModal({
         setCenters(result.data.centers);
       }
     } catch (error) {
-      console.error('센터 목록 로드 실패:', error);
+      logger.error('센터 목록 로드 실패:', error);
     } finally {
       setLoadingCenters(false);
     }
@@ -122,7 +123,7 @@ export default function ExternalPersonalLessonRequestModal({
         }
       }
     } catch (error) {
-      console.error('레인 가용성 확인 실패:', error);
+      logger.error('레인 가용성 확인 실패:', error);
     } finally {
       setLoadingLanes(false);
     }

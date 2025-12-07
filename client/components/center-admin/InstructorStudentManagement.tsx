@@ -1,11 +1,4 @@
-/**
- * 강사별 수강생 관리 컴포넌트
- * 헬스 PT 관리 시스템 스타일로 강사별 수강생 현황을 관리합니다.
- * 
- * 연동 데이터: 강사 정보, 수강생 목록, 예약 현황, 패키지 정보
- * 연동 파일: InstructorScheduleModal.tsx, PersonalLesson.ts, CenterSchedule.ts
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../utils/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
@@ -128,20 +121,20 @@ export default function InstructorStudentManagement({
         const studentsArray = Array.isArray(studentsData) ? studentsData : [];
         setStudents(studentsArray);
       } else {
-        console.error('수강생 목록 조회 실패:', studentsResponse.message);
+        logger.error('수강생 목록 조회 실패:', studentsResponse.message);
         setStudents([]);
       }
     } catch (error) {
-      console.error('강사 데이터 조회 실패:', error);
+      logger.error('강사 데이터 조회 실패:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const filterAndSortStudents = () => {
-    console.log('🔍 filterAndSortStudents 시작, students:', students.length);
+    logger.info('🔍 filterAndSortStudents 시작, students:', students.length);
     let filtered = [...students];
-    console.log('🔍 초기 filtered:', filtered.length);
+    logger.info('🔍 초기 filtered:', filtered.length);
 
     // 검색어 필터링
     if (searchTerm) {

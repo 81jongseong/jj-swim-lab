@@ -70,6 +70,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Pose } from '@mediapipe/pose';
@@ -471,7 +472,7 @@ export function SwimmingPoseAnalysis({
   // 녹화된 프레임 분석
   const analyzeRecordedFrames = () => {
     // 녹화된 프레임들을 분석하여 전체적인 수영 동작 평가
-    console.log('녹화된 프레임 분석:', recordedFrames.length);
+    logger.info('녹화된 프레임 분석:', recordedFrames.length);
   };
 
   // 컴포넌트 마운트 시 초기화

@@ -26,6 +26,7 @@ import { aggregateConditionRules } from '@/lib/swimlab/condition-rules-v4';
 import { TRAINING_METHODS } from '@/src/swimlab/data/trainingMethods';
 import { DRILLS } from '@/src/swimlab/data/drills';
 import { calculateScientificAdjustments } from '@/lib/swimlab/scientific-factors';
+import { logger } from '@/lib/logger';
 
 type Stroke = 'freestyle' | 'backstroke' | 'breaststroke' | 'butterfly' | 'elementary_backstroke' | 'sidestroke';
 type Zone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
@@ -634,7 +635,7 @@ function calculateRepsFromTime(
   // 실제 소요 시간 계산 (검증용)
   const actualTotalSeconds = (swimTimePerRep * finalReps) + (restSeconds * (finalReps - 1));
   
-  console.log(`⏱️ 시간 역산 계산:`, {
+  logger.debug('시간 역산 계산', {
     targetMinutes,
     targetSeconds,
     distPerRep,
@@ -831,7 +832,7 @@ export function generateTimeBasedProgram(opts: {
       const turnsFrom = Math.max(0, Math.floor(100 / cssMeasurementPoolLength) - 1);
       const turnsTo = Math.max(0, Math.floor(100 / 50) - 1);
       const adjustment = (turnsTo - turnsFrom) * 0.4;
-      console.log(`🔄 CSS 변환 (${stroke}): ${cssMeasurementPoolLength}m 풀(${turnsFrom}턴) ${baseCss}초 → 50m 기준(${turnsTo}턴) ${convertedCss.toFixed(1)}초 (조정: ${adjustment > 0 ? '+' : ''}${adjustment.toFixed(1)}초)`);
+      logger.debug(`CSS 변환 (${stroke}): ${cssMeasurementPoolLength}m 풀(${turnsFrom}턴) ${baseCss}초 → 50m 기준(${turnsTo}턴) ${convertedCss.toFixed(1)}초 (조정: ${adjustment > 0 ? '+' : ''}${adjustment.toFixed(1)}초)`);
       return convertedCss;
     }
     
@@ -872,7 +873,7 @@ export function generateTimeBasedProgram(opts: {
     return suitableStrokes[currentIndex % suitableStrokes.length] as Stroke;
   };
   
-  console.log('🚀 시간 기반 프로그램 생성 시작:', {
+  logger.info('시간 기반 프로그램 생성 시작', {
     targetMinutes: opts.targetMinutes,
     goal: opts.goal,
     level: opts.level,
@@ -896,7 +897,7 @@ export function generateTimeBasedProgram(opts: {
     intensityPercent: opts.intensityPercent
   });
   
-  console.log('🔬 과학적 조정:', scientificAdj.scientificSummary);
+  logger.debug('과학적 조정', scientificAdj.scientificSummary);
   
   // 1. 시간 배분 (목표별 맞춤 비율 + 최소/최대 제한)
   // 🔬 과학적 근거: ACSM (2018) - 워밍업 최소 5분, 쿨다운 최소 5분
@@ -926,7 +927,7 @@ export function generateTimeBasedProgram(opts: {
     cooldown
   };
   
-  console.log('📊 시간 배분:', timeAllocation);
+  logger.debug('시간 배분', timeAllocation);
   
   // 2. 컨디션 기반 페이스 조절
   const conditionRules = aggregateConditionRules(opts.conditionIds, opts.dayCondition, opts.hasPain || false, opts.intensityPercent);
@@ -938,7 +939,7 @@ export function generateTimeBasedProgram(opts: {
     || 90;
   
   // 🚨 질환별 영법 경고 시스템
-  console.log('🔍 영법 조정 디버그:', {
+  logger.debug('영법 조정 디버그', {
     primaryStroke,
     strokeAdjustments: conditionRules.strokeAdjustments,
     primaryStrokeAdj: conditionRules.strokeAdjustments[primaryStroke],
@@ -959,14 +960,14 @@ export function generateTimeBasedProgram(opts: {
   }
   
   if (strokeWarnings.length > 0) {
-    console.warn('🚨 영법 경고:', strokeWarnings.join('\n'));
+    logger.warn('영법 경고', strokeWarnings.join('\n'));
   }
   
   // 🔬 종합 페이스 조절 (모든 과학적 인자 통합)
   const finalMultiplier = scientificAdj.finalPaceMultiplier * (1 + conditionRules.cssPct);
   const adjustedCss = Math.round(baseCss * finalMultiplier);
   
-  console.log('🏥 최종 페이스 조절:', {
+  logger.debug('최종 페이스 조절', {
     baseCss,
     scientificMultiplier: scientificAdj.finalPaceMultiplier.toFixed(2),
     conditionCssPct: conditionRules.cssPct,
@@ -1019,7 +1020,7 @@ export function generateTimeBasedProgram(opts: {
       evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
     });
     
-    console.log('✅ 워밍업 생성:', { stroke: getStrokeName(warmupStroke), css: strokeCss, adjustedCss: adjustedStrokeCss, reps, meters });
+    logger.debug('워밍업 생성', { stroke: getStrokeName(warmupStroke), css: strokeCss, adjustedCss: adjustedStrokeCss, reps, meters });
   }
   
   // 4. 드릴 (레벨별 거리 단위)
@@ -1071,7 +1072,7 @@ export function generateTimeBasedProgram(opts: {
           evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
         });
         
-        console.log(`🎓 재활 영법 강습 추가: ${getStrokeName(lessonStroke)}, ${reps}×${distPerRep}m`);
+        logger.debug(`재활 영법 강습 추가: ${getStrokeName(lessonStroke)}, ${reps}×${distPerRep}m`);
       });
     }
     
@@ -1084,7 +1085,7 @@ export function generateTimeBasedProgram(opts: {
       const paceSeconds = (adjustedCss * 1.09 * selectedDrill.paceMultiplier) / 2; // 레벨별 페이스 조정
       const restSeconds = getRestForZone('Z2');
       
-      console.log('🎯 선택된 팔 드릴:', {
+      logger.debug('선택된 팔 드릴', {
         level: opts.level,
         goal: opts.goal,
         drillName: selectedDrill.name,
@@ -1124,7 +1125,7 @@ export function generateTimeBasedProgram(opts: {
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
-      console.log('✅ 팔 드릴 생성:', { reps, meters, desc, stroke: getStrokeName(pullStroke) });
+      logger.debug('팔 드릴 생성', { reps, meters, desc, stroke: getStrokeName(pullStroke) });
     }
     
     // 4-2. 발차기 드릴 (레벨별 자동 선택)
@@ -1136,7 +1137,7 @@ export function generateTimeBasedProgram(opts: {
       const paceSeconds = (adjustedCss * 1.5 * selectedDrill.paceMultiplier) / 2; // 레벨별 페이스 조정
       const restSeconds = getRestForZone('Z2');
       
-      console.log('🎯 선택된 발차기 드릴:', {
+      logger.debug('선택된 발차기 드릴', {
         level: opts.level,
         goal: opts.goal,
         drillName: selectedDrill.name,
@@ -1176,7 +1177,7 @@ export function generateTimeBasedProgram(opts: {
         evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
       });
       
-      console.log('✅ 발차기 드릴 생성:', { reps, meters, desc, stroke: getStrokeName(kickStroke) });
+      logger.debug('발차기 드릴 생성', { reps, meters, desc, stroke: getStrokeName(kickStroke) });
     }
   }
   
@@ -1196,7 +1197,7 @@ export function generateTimeBasedProgram(opts: {
     
     const timePerMethod = targetMin / mainSplits;
     
-    console.log('📊 메인 세트 분할 (과학적 근거):', {
+    logger.debug('메인 세트 분할 (과학적 근거)', {
       totalMainTime: targetMin,
       splits: mainSplits,
       timePerMethod,
@@ -1207,7 +1208,7 @@ export function generateTimeBasedProgram(opts: {
       // 🎯 목표별 + 테마별 + 레벨별 훈련법 자동 선택
       const selectedMethod = selectTrainingMethodByGoalAndTheme(opts.goal, theme, adjustedCss, timePerMethod, i, opts.level);
       
-      console.log(`🎯 메인 훈련법 ${i + 1}/${mainSplits}:`, {
+      logger.debug(`메인 훈련법 ${i + 1}/${mainSplits}`, {
         goal: opts.goal,
         methodId: selectedMethod.methodId,
         methodName: selectedMethod.name,
@@ -1257,7 +1258,7 @@ export function generateTimeBasedProgram(opts: {
         evidenceKeys: selectedMethod.evidenceKeys
       });
       
-      console.log(`✅ 메인 세트 ${i + 1} 생성:`, { reps, meters, desc: finalDesc, stroke: getStrokeName(mainStroke) });
+      logger.debug(`메인 세트 ${i + 1} 생성`, { reps, meters, desc: finalDesc, stroke: getStrokeName(mainStroke) });
     }
   }
   
@@ -1300,7 +1301,7 @@ export function generateTimeBasedProgram(opts: {
       evidenceKeys: ['CSS_VALIDITY_WAKAYOSHI_1992']
     });
     
-    console.log('✅ 쿨다운 생성:', { reps, meters, desc, stroke: getStrokeName(cooldownStroke) });
+    logger.debug('쿨다운 생성', { reps, meters, desc, stroke: getStrokeName(cooldownStroke) });
   }
   
   // 7. 최종 검증: 실제 소요 시간 계산
@@ -1328,7 +1329,7 @@ export function generateTimeBasedProgram(opts: {
       totalMinutes += duration;
       totalMeters += set.meters;
       
-      console.log(`✅ 세트 ${idx + 1} 검증:`, {
+      logger.debug(`세트 ${idx + 1} 검증`, {
         desc: set.desc.substring(0, 60),
         reps,
         distPerRep,
@@ -1341,7 +1342,7 @@ export function generateTimeBasedProgram(opts: {
     }
   });
   
-  console.log('🎯 최종 검증:', {
+  logger.debug('최종 검증', {
     targetMinutes: opts.targetMinutes,
     actualMinutes: totalMinutes.toFixed(1),
     accuracy: ((totalMinutes / opts.targetMinutes) * 100).toFixed(1) + '%',
@@ -1359,4 +1360,5 @@ export function generateTimeBasedProgram(opts: {
     strokeWarnings: strokeWarnings.length > 0 ? strokeWarnings : undefined
   };
 }
+
 

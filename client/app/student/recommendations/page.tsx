@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Lightbulb, Target, TrendingUp, Award, Star, Calendar } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface Recommendation {
   _id: string;
@@ -52,7 +54,7 @@ function StudentRecommendations() {
         setRecommendations(recommendationsData);
       }
     } catch (error) {
-      console.error('추천사항 로드 실패:', error);
+      logger.error('추천사항 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -136,8 +138,7 @@ function StudentRecommendations() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">추천사항을 불러오는 중...</span>
+        <LoadingState message="추천사항을 불러오는 중..." size="md" />
       </div>
     );
   }
@@ -146,10 +147,10 @@ function StudentRecommendations() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">학생 건강 추천사항</h1>
-          <p className="text-gray-600">AI가 분석한 맞춤형 학습 추천사항을 확인하세요</p>
-        </div>
+        <PageHeader
+          title="학생 건강 추천사항"
+          description="AI가 분석한 맞춤형 학습 추천사항을 확인하세요"
+        />
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

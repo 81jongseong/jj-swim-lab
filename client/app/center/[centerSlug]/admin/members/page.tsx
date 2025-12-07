@@ -15,6 +15,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -22,6 +23,7 @@ import { Loader2 } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
+import { LoadingState, ConfirmModal, ErrorState } from '@/components/common';
 
 interface ApiListResponse<T> {
   success: boolean;
@@ -91,6 +93,19 @@ const CenterAdminMembersPage: React.FC = () => {
   const [courseFilter, setCourseFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
   const [assignmentDraft, setAssignmentDraft] = useState<Record<string, string>>({});
   const [page, setPage] = useState<number>(1);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [pageSize, setPageSize] = useState<number>(20);
   const [sortKey, setSortKey] = useState<'name' | 'createdAt' | 'status' | 'courses'>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -106,7 +121,7 @@ const CenterAdminMembersPage: React.FC = () => {
         setError(response.message ?? '회원 목록을 불러오지 못했습니다.');
       }
     } catch (err) {
-      console.error('회원 목록 조회 실패:', err);
+      logger.error('회원 목록 조회 실패:', err);
       setError('회원 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -120,7 +135,7 @@ const CenterAdminMembersPage: React.FC = () => {
         setCourses(response.data);
       }
     } catch (err) {
-      console.error('과정 목록 조회 실패:', err);
+      logger.error('과정 목록 조회 실패:', err);
     }
   }, []);
 
@@ -152,32 +167,37 @@ const CenterAdminMembersPage: React.FC = () => {
       await loadMembers();
       alert('과정이 성공적으로 배정되었습니다.');
     } catch (err) {
-      console.error('과정 배정 실패:', err);
+      logger.error('과정 배정 실패:', err);
       alert('과정 배정 중 오류가 발생했습니다.');
     }
   };
 
   const handleUnassignCourse = async (memberId: string, courseId: string) => {
-    if (!confirm('해당 과정 배정을 해제하시겠습니까?')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '해당 과정 배정을 해제하시겠습니까?',
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          const response = await apiClient.delete<ApiListResponse<unknown>>(
+            `/api/center-admin/members/${memberId}/course/${courseId}`
+          );
+          
+          if (!response.success) {
+            alert(response.message ?? '과정 배정 해제에 실패했습니다.');
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+            return;
+          }
 
-    try {
-      const response = await apiClient.delete<ApiListResponse<unknown>>(
-        `/api/center-admin/members/${memberId}/course/${courseId}`
-      );
-      
-      if (!response.success) {
-        alert(response.message ?? '과정 배정 해제에 실패했습니다.');
-        return;
+          await loadMembers();
+          alert('과정 배정이 해제되었습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (err) {
+          logger.error('과정 배정 해제 실패:', err);
+          alert('과정 배정 해제 중 오류가 발생했습니다.');
+        }
       }
-
-      await loadMembers();
-      alert('과정 배정이 해제되었습니다.');
-    } catch (err) {
-      console.error('과정 배정 해제 실패:', err);
-      alert('과정 배정 해제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const filteredMembers = useMemo(() => {
@@ -237,14 +257,7 @@ const CenterAdminMembersPage: React.FC = () => {
   }, [members]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3 text-gray-600">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p>회원 정보를 불러오는 중입니다…</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="회원 정보를 불러오는 중입니다…" size="lg" fullScreen />;
   }
 
   const centerSlug = params?.centerSlug ?? '센터';
@@ -288,9 +301,12 @@ const CenterAdminMembersPage: React.FC = () => {
         </section>
 
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-        </div>
+          <ErrorState 
+            message={error}
+            onRetry={loadMembers}
+            retryText="다시 시도"
+            className="mb-4"
+          />
         )}
 
         <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-end md:justify-between sticky top-0 z-10">
@@ -527,6 +543,18 @@ const CenterAdminMembersPage: React.FC = () => {
           </div>
         </section>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 };

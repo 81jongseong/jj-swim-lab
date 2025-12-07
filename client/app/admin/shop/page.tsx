@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
+import { LoadingState, ErrorState, PageHeader, ConfirmModal } from '@/components/common';
 
 interface ShopItem {
   _id: string;
@@ -20,6 +21,19 @@ function AdminShopPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -85,13 +99,24 @@ function AdminShopPage() {
     return (
       <div className="min-h-screen bg-blue-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-              <p className="mt-6 text-xl text-gray-700 font-medium">로딩 중입니다...</p>
-              <p className="mt-2 text-lg text-gray-500">잠시만 기다려주세요</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중입니다..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-blue-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState
+            message={error}
+            onRetry={() => {
+              setError(null);
+              load();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -100,10 +125,10 @@ function AdminShopPage() {
   return (
     <div className="min-h-screen bg-blue-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-blue-900 mb-3">🛍️ 상점 관리</h1>
-          <p className="text-xl text-blue-700">JJ Swim Lab의 모든 상품을 쉽게 관리하세요</p>
-        </div>
+        <PageHeader
+          title="🛍️ 상점 관리"
+          description="JJ Swim Lab의 모든 상품을 쉽게 관리하세요"
+        />
 
         <div className="bg-white rounded-xl shadow-lg border-2 border-blue-200">
           <div className="px-8 py-6 border-b-2 border-blue-200 bg-blue-50">
@@ -140,13 +165,6 @@ function AdminShopPage() {
               </button>
             </div>
           </div>
-
-          {error && (
-            <div className="px-8 py-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-              <p className="font-medium">오류가 발생했습니다:</p>
-              <p>{error}</p>
-            </div>
-          )}
 
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -313,10 +331,17 @@ function AdminShopPage() {
                       </button>
                       <button
                         onClick={async () => {
-                          if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) return;
-                          const res = await apiClient.delete(`/shop/${item._id}`);
-                          if (res.error) alert(res.error);
-                          else load();
+                          setConfirmModal({
+                            isOpen: true,
+                            message: '정말로 이 상품을 삭제하시겠습니까?',
+                            variant: 'danger',
+                            onConfirm: async () => {
+                              const res = await apiClient.delete(`/shop/${item._id}`);
+                              if (res.error) alert(res.error);
+                              else load();
+                              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                            }
+                          });
                         }}
                         className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                       >
@@ -367,6 +392,18 @@ function AdminShopPage() {
           </div>
         </div>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

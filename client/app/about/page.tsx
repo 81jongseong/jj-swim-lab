@@ -1,7 +1,9 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { LoadingState } from '@/components/common';
 
 interface CenterInfo {
   name: string;
@@ -256,7 +258,7 @@ const SuperAdminView: React.FC<{ centerInfo: CenterInfo; user: any }> = ({ cente
         alert('저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     }
   };
@@ -560,12 +562,7 @@ export default function AboutPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
         </div>
       </div>
     );

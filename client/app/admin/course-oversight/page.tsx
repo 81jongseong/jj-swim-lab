@@ -6,10 +6,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
+import { CardGrid, PageHeader } from '@/components/common';
 import SimpleBarChart from '@/components/SimpleBarChart';
 import { 
   Eye, 
@@ -195,7 +197,7 @@ const CourseOversightPage: React.FC = () => {
   useEffect(() => {
     const loadCourseOversightData = async () => {
       try {
-        console.log('강습 과정 감독 데이터 로드 중...');
+        logger.info('강습 과정 감독 데이터 로드 중...');
         
         // 임시 데이터 설정
         setStats({
@@ -207,7 +209,7 @@ const CourseOversightPage: React.FC = () => {
           totalStudents: 320
         });
       } catch (error) {
-        console.error('강습 과정 감독 데이터 로드 실패:', error);
+        logger.error('강습 과정 감독 데이터 로드 실패:', error);
       }
     };
 
@@ -242,13 +244,14 @@ const CourseOversightPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">강습 과정 감독</h1>
-        <p className="text-gray-600 mt-2">전체 센터의 강습 과정 현황을 감독하고 모니터링합니다.</p>
-      </div>
+      <PageHeader
+        title="강습 과정 감독"
+        description="전체 센터의 강습 과정 현황을 감독하고 모니터링합니다."
+        className="mb-8"
+      />
 
       {/* 주요 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           title="총 강습 과정"
           value={`${stats.totalCourses}개`}
@@ -284,7 +287,7 @@ const CourseOversightPage: React.FC = () => {
           subtitle="전체 평균"
           href="/admin/courses"
         />
-      </div>
+      </CardGrid>
 
       {/* 추가 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

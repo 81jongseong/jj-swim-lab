@@ -1,7 +1,9 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { LoadingState, PageHeader } from '@/components/common';
 import { 
   Calculator, 
   Activity, 
@@ -193,7 +195,7 @@ export default function CenterAdminExerciseCalculatorPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
     // 실제로는 서버에 저장
-    console.log('결과 저장:', results);
+    logger.info('결과 저장:', results);
   };
 
   const getBMICategory = (bmi: number) => {
@@ -226,12 +228,10 @@ export default function CenterAdminExerciseCalculatorPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🏊‍♀️ 운동 계산기</h1>
-          <p className="text-gray-600">
-            개인 정보를 바탕으로 맞춤형 수영 운동 계획을 계산합니다.
-          </p>
-        </div>
+        <PageHeader
+          title="🏊‍♀️ 운동 계산기"
+          description="개인 정보를 바탕으로 맞춤형 수영 운동 계획을 계산합니다."
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 입력 폼 */}
@@ -381,10 +381,7 @@ export default function CenterAdminExerciseCalculatorPage() {
                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    계산 중...
-                  </>
+                  <LoadingState message="계산 중..." size="sm" className="flex-row text-white" />
                 ) : (
                   <>
                     <Calculator className="w-4 h-4 mr-2" />

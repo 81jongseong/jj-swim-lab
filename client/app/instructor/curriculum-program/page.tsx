@@ -16,11 +16,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/utils/api';
 import { useRouter } from 'next/navigation';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface TeachingMethod {
   _id: string;
@@ -87,7 +89,7 @@ export default function CurriculumProgramPage() {
       ];
       setTeachingMethods(tempMethods);
     } catch (error) {
-      console.error('강습법 로드 오류:', error);
+      logger.error('강습법 로드 오류:', error);
     }
   };
 
@@ -127,7 +129,7 @@ export default function CurriculumProgramPage() {
       alert('프로그램이 저장되었습니다!');
       router.push('/instructor/teaching-methods');
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장에 실패했습니다.');
     }
   };
@@ -135,7 +137,7 @@ export default function CurriculumProgramPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -143,12 +145,10 @@ export default function CurriculumProgramPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">📚 커리큘럼 프로그램 생성</h1>
-        <p className="text-gray-600 mt-2">
-          초급/중급 회원을 위한 커리큘럼 프로그램을 생성합니다
-        </p>
-      </div>
+      <PageHeader
+        title="📚 커리큘럼 프로그램 생성"
+        description="초급/중급 회원을 위한 커리큘럼 프로그램을 생성합니다"
+      />
 
       {/* 기본 설정 */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">

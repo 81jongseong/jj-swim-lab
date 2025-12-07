@@ -18,12 +18,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import apiClient from '../../../utils/api';
 import GeoDistributionMap, { Spot } from '../../../components/geo-distribution/GeoDistributionMap';
+import { LoadingState } from '@/components/common';
 
 // 툴팁 위치 계산 함수 (스팟 위치를 기준으로 가깝게 배치)
 function calculateTooltipPosition(
@@ -147,7 +149,7 @@ export default function CenterAdminGeoDistributionPage() {
                     }
                   }
                 } catch (error) {
-                  console.warn(`센터 ${centerId} 정보 조회 실패:`, error);
+                  logger.warn(`센터 ${centerId} 정보 조회 실패:`, error);
                   // 서버 연결 실패 시 기본 센터 이름 사용
                   // ID가 특정 센터인 경우 기본 이름 설정
                   if (centerId === '68fb75b111747a8229d6cf5d' || centerId.includes('68fb75b1')) {
@@ -176,7 +178,7 @@ export default function CenterAdminGeoDistributionPage() {
             setManagedCenterIds(centerIds);
             setManagedCenterNames(centerNames);
           } catch (error) {
-            console.error('센터 목록 로드 오류:', error);
+            logger.error('센터 목록 로드 오류:', error);
           }
         };
         loadCentersWithNames();
@@ -186,9 +188,9 @@ export default function CenterAdminGeoDistributionPage() {
 
    // 스팟 데이터 로딩 (줌 레벨에 따라 aggregation precision 자동 조정)
    const fetchSpotsData = useCallback(async () => {
-     console.log('🚀 fetchSpotsData 호출:', { hasUser: !!user, userType: user?.userType, mapLoaded });
+     logger.info('🚀 fetchSpotsData 호출:', { hasUser: !!user, userType: user?.userType, mapLoaded });
      if (!user) {
-       console.warn('⚠️ 사용자 정보 없음 - fetchSpotsData 취소');
+       logger.warn('⚠️ 사용자 정보 없음 - fetchSpotsData 취소');
        return;
      }
 
@@ -212,7 +214,7 @@ export default function CenterAdminGeoDistributionPage() {
 
        // ✅ /api/geo/spots 사용 (aggregation precision 자동 조정)
        const apiUrl = `/api/geo/spots?${params.toString()}`;
-       console.log('🔍 API 요청:', apiUrl);
+       logger.info('🔍 API 요청:', apiUrl);
        
        // ✅ 인증 토큰 포함하여 요청 (센터 관리자 필터링을 위해)
        const headers: HeadersInit = {
@@ -232,8 +234,8 @@ export default function CenterAdminGeoDistributionPage() {
        });
        const result = await response.json();
        
-      console.log('📊 스팟 데이터 응답:', result);
-      console.log('📊 응답 구조 확인:', {
+      logger.info('📊 스팟 데이터 응답:', result);
+      logger.info('📊 응답 구조 확인:', {
         hasSuccess: !!result.success,
         hasData: !!result.data,
         hasSpots: !!result.data?.spots,
@@ -246,15 +248,15 @@ export default function CenterAdminGeoDistributionPage() {
        
        if (result.success) {
          const spotsData = result.data?.spots || result.spots || [];
-         console.log(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
+         logger.info(`✅ 처리된 스팟 데이터: ${spotsData.length}개`);
          if (spotsData.length > 0) {
-           console.log('📊 첫 번째 스팟 샘플:', spotsData[0]);
+           logger.info('📊 첫 번째 스팟 샘플:', spotsData[0]);
          }
          
          if (spotsData.length === 0) {
-           console.warn('⚠️ 스팟 데이터가 비어있습니다. 서버 로그를 확인하세요:');
-           console.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}, zoom=${currentZoom}`);
-           console.warn(`  - metadata:`, result.data?.metadata || result.metadata);
+           logger.warn('⚠️ 스팟 데이터가 비어있습니다. 서버 로그를 확인하세요:');
+           logger.warn(`  - 필터 조건: centerId=${selectedCenterId || 'all'}, memberType=${memberType}, zoom=${currentZoom}`);
+           logger.warn(`  - metadata:`, result.data?.metadata || result.metadata);
          }
          
          // ✅ 유효성 검사 및 변환
@@ -270,7 +272,7 @@ export default function CenterAdminGeoDistributionPage() {
                             lat !== 0 && lng !== 0 && totalApprox > 0 &&
                             lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
              if (!isValid) {
-               console.warn('⚠️ 유효하지 않은 스팟 필터링:', spot, { lat, lng, totalApprox });
+               logger.warn('⚠️ 유효하지 않은 스팟 필터링:', spot, { lat, lng, totalApprox });
                return false;
              }
              
@@ -288,17 +290,17 @@ export default function CenterAdminGeoDistributionPage() {
              memberType: memberType === 'all' ? undefined : memberType
            }));
          
-         console.log(`✅ 필터링된 스팟 데이터: ${validSpots.length}개 (원본: ${spotsData.length}개)`);
+         logger.info(`✅ 필터링된 스팟 데이터: ${validSpots.length}개 (원본: ${spotsData.length}개)`);
 
          setSpots(validSpots);
          setMetadata(result.data?.metadata || result.metadata || {});
        } else {
-         console.warn('⚠️ API 응답이 성공하지 않았습니다:', result);
+         logger.warn('⚠️ API 응답이 성공하지 않았습니다:', result);
          setSpots([]);
          setMetadata(null);
        }
      } catch (error) {
-       console.error('❌ 스팟 데이터 로딩 오류:', error);
+       logger.error('❌ 스팟 데이터 로딩 오류:', error);
        setSpots([]);
        setMetadata(null);
      } finally {
@@ -308,19 +310,19 @@ export default function CenterAdminGeoDistributionPage() {
 
   // 지도 로딩 완료 후 데이터 로드
   useEffect(() => {
-    console.log('🗺️ 지도 로딩 상태 확인:', { mapLoaded, hasUser: !!user, userType: user?.userType });
+    logger.info('🗺️ 지도 로딩 상태 확인:', { mapLoaded, hasUser: !!user, userType: user?.userType });
     if (mapLoaded) {
-      console.log('✅ 지도 로딩 완료 - 스팟 데이터 로딩 시작');
+      logger.info('✅ 지도 로딩 완료 - 스팟 데이터 로딩 시작');
       fetchSpotsData();
     } else {
-      console.log('⏳ 지도 로딩 대기 중...');
+      logger.info('⏳ 지도 로딩 대기 중...');
     }
   }, [mapLoaded, fetchSpotsData, user]);
 
    // ✅ 필터 변경 시 데이터 재로딩 (줌 레벨 제외)
    useEffect(() => {
      if (mapLoaded) {
-       console.log('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
+       logger.info('🔄 필터 변경 감지 - 데이터 재로딩:', { memberType, selectedCenterId });
        fetchSpotsData();
      }
    }, [mapLoaded, memberType, selectedCenterId, fetchSpotsData]);
@@ -330,7 +332,7 @@ export default function CenterAdminGeoDistributionPage() {
      if (!mapLoaded) return;
      
      const timeoutId = setTimeout(() => {
-       console.log('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
+       logger.info('🔍 줌 레벨 변경 감지 - 데이터 재로딩:', currentZoom);
        fetchSpotsData();
      }, 500); // 500ms 디바운스
  
@@ -353,17 +355,14 @@ export default function CenterAdminGeoDistributionPage() {
 
   // 지도 로딩 완료 핸들러
   const handleMapLoad = useCallback(() => {
-    console.log('✅ GeoDistributionMap 지도 로딩 완료 콜백 호출');
+    logger.info('✅ GeoDistributionMap 지도 로딩 완료 콜백 호출');
     setMapLoaded(true);
   }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }

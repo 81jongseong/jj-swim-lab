@@ -18,41 +18,12 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/api';
 import { convertHealthToConditions } from '@/lib/swimlab/utils/healthToCondition';
 import { CardGrid } from '@/components/common';
+import { logger } from '@/lib/logger';
 
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  userType: 'student' | 'instructor' | 'centerAdmin' | 'superAdmin';
-  groupClassName?: string; // 단체반 이름
-  groupClassId?: string; // 단체반 ID
-  studentInfo?: {
-    age?: number;
-    swimmingLevel?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
-    currentLevel?: string; // 현재 레벨
-    healthProfile?: {
-      height?: number;
-      weight?: number;
-      chronicConditions?: string[];
-      allergies?: string[];
-      activityLevel?: string;
-    };
-    swimmingProfile?: {
-      css?: {
-        freestyle?: number;
-        backstroke?: number;
-        breaststroke?: number;
-        butterfly?: number;
-        lastUpdated?: string;
-        updatedByRole?: 'self' | 'instructor';
-      };
-      preferredStrokes?: string[];
-      trainingDays?: number[];
-      currentGoal?: string;
-      conditionIds?: string[];
-    };
-  };
-}
+import type { User } from '@/types/user';
+
+// User 타입은 통합 타입에서 import합니다
+// 필요한 확장 타입은 통합 타입의 studentInfo에 이미 포함되어 있습니다
 
 interface MemberSelectModalProps {
   isOpen: boolean;
@@ -67,11 +38,11 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
   
   useEffect(() => {
     if (isOpen) {
-      console.log('🔍 MemberSelectModal props:', {
+      logger.debug('MemberSelectModal props', {
         multiSelect,
-        'onMultiSelect 존재?': !!onMultiSelect,
-        'showVariablesModal 존재?': !!showVariablesModal,
-        'showVariablesModal 타입': typeof showVariablesModal
+        hasOnMultiSelect: !!onMultiSelect,
+        hasShowVariablesModal: !!showVariablesModal,
+        showVariablesModalType: typeof showVariablesModal
       });
     }
   }, [isOpen]);
@@ -94,28 +65,26 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      console.log('🔍 회원 불러오기 시작...');
+      logger.debug('회원 불러오기 시작');
       
       // 단체반 회원 포함하여 전체 회원 불러오기
       const allUsersResponse = await apiClient.get('/api/users/center-users?limit=100&includeGroupStudents=true') as any;
       
-      console.log('📡 API 응답:', allUsersResponse);
+      logger.api('회원 목록 API 응답', allUsersResponse);
       
       if (allUsersResponse.success && allUsersResponse.data) {
         let allUsers = Array.isArray(allUsersResponse.data) 
           ? allUsersResponse.data 
           : (allUsersResponse.data as any).users || [];
         
-        console.log(`✅ 총 ${allUsers.length}명의 회원 조회됨`);
+        logger.success(`총 ${allUsers.length}명의 회원 조회됨`);
         
         // 레벨 확인
-        console.log('회원 레벨 샘플:');
-        allUsers.slice(0, 3).forEach((u: any) => {
-          console.log(`  - ${u.name}:`, {
-            'studentInfo.currentLevel': u.studentInfo?.currentLevel,
-            'studentInfo.swimmingLevel': u.studentInfo?.swimmingLevel
-          });
-        });
+        logger.debug('회원 레벨 샘플', allUsers.slice(0, 3).map((u: any) => ({
+          name: u.name,
+          currentLevel: u.studentInfo?.currentLevel,
+          swimmingLevel: u.studentInfo?.swimmingLevel
+        })));
         
         // 단체반 정보 가져오기
         try {
@@ -123,7 +92,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
           if (groupClassesResponse.success && (groupClassesResponse.data as any)?.groupClasses) {
             const groupClassesData = (groupClassesResponse.data as any).groupClasses;
             
-            console.log(`📚 ${groupClassesData.length}개 단체반 정보 조회됨`);
+            logger.info(`${groupClassesData.length}개 단체반 정보 조회됨`);
             
             // 단체반 목록 state에 저장
             setGroupClasses(groupClassesData);
@@ -140,7 +109,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
               );
               
               if (userClass) {
-                console.log(`  - ${user.name} → ${userClass.className}`);
+                logger.debug(`${user.name} → ${userClass.className}`);
               }
               
               return {
@@ -150,7 +119,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
             });
           }
         } catch (groupError) {
-          console.warn('⚠️ 단체반 정보 불러오기 실패:', groupError);
+          logger.warn('단체반 정보 불러오기 실패:', groupError);
         }
         
         setMembers(allUsers);
@@ -158,9 +127,9 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
         return;
       }
       
-      console.warn('⚠️ API 응답이 비어있음, 데모 데이터 사용');
+      logger.warn('API 응답이 비어있음, 데모 데이터 사용');
     } catch (error) {
-      console.warn('회원 목록 불러오기 실패, 데모 데이터 사용:', error);
+      logger.warn('회원 목록 불러오기 실패, 데모 데이터 사용:', error);
     }
     
     // 데모 데이터 (API 실패 시 또는 개발 환경)
@@ -389,21 +358,21 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                       // 다중 선택 모드
                       if (isSelected) {
                         setSelectedUsers(selectedUsers.filter(u => u._id !== member._id));
-                        console.log(`❌ 선택 해제: ${member.name}`);
+                        logger.debug(`선택 해제: ${member.name}`);
                       } else {
-                        console.log(`✅ 선택 추가: ${member.name}`, {
+                        logger.debug(`선택 추가: ${member.name}`, {
                           currentLevel: member.studentInfo?.currentLevel,
                           swimmingLevel: member.studentInfo?.swimmingLevel,
-                          'member 전체 keys': Object.keys(member)
+                          memberKeys: Object.keys(member)
                         });
                         
                         // 전체 객체 깊은 복사
                         const fullMember = JSON.parse(JSON.stringify(member));
                         
-                        console.log('복사된 fullMember:', {
+                        logger.debug('복사된 fullMember', {
                           name: fullMember.name,
-                          'studentInfo?.currentLevel': fullMember.studentInfo?.currentLevel,
-                          'keys': Object.keys(fullMember)
+                          currentLevel: fullMember.studentInfo?.currentLevel,
+                          keys: Object.keys(fullMember)
                         });
                         
                         setSelectedUsers([...selectedUsers, fullMember as any]);
@@ -510,7 +479,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                   return;
                 }
                 
-                console.log(`📊 선택: 개인 PT ${selectedUsers.length}명, 단체반 ${selectedGroups.length}개`);
+                logger.debug(`선택: 개인 PT ${selectedUsers.length}명, 단체반 ${selectedGroups.length}개`);
                 
                 // 단체반을 AthleteProfile 형식으로 변환
                 const groupProfiles = selectedGroups.map(gc => ({
@@ -531,9 +500,9 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                 
                 // 개인 PT 1명 이상 선택 시 변수 설정 모달 (단일 회원도 팝업 사용)
                 if (selectedUsers.length >= 1 && selectedGroups.length === 0 && showVariablesModal) {
-                  console.log(`→ 개인 PT ${selectedUsers.length}명: 변수 설정 모달`);
-                  console.log('📊 selectedUsers 전체:', selectedUsers);
-                  console.log('전달할 회원 데이터:', selectedUsers.map(u => ({
+                  logger.debug(`→ 개인 PT ${selectedUsers.length}명: 변수 설정 모달`);
+                  logger.debug('selectedUsers 전체', selectedUsers);
+                  logger.debug('전달할 회원 데이터', selectedUsers.map(u => ({
                     name: u.name,
                     _id: u._id,
                     'studentInfo': u.studentInfo,
@@ -547,8 +516,8 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                 
                 // 단체반 선택 시 반별 설정 모달
                 if (selectedGroups.length > 0 && showVariablesModal) {
-                  console.log('→ 단체반 선택: 반별 설정 모달');
-                  console.log('선택된 단체반:', selectedGroups.map(gc => ({
+                  logger.debug('→ 단체반 선택: 반별 설정 모달');
+                  logger.debug('선택된 단체반', selectedGroups.map(gc => ({
                     className: gc.className,
                     level: gc.level
                   })));
@@ -580,7 +549,7 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                       }
                     };
                     
-                    console.log('단체반 변환 결과:', {
+                    logger.debug('단체반 변환 결과', {
                       name: converted.name,
                       level: converted.level,
                       'studentInfo.currentLevel': converted.studentInfo.currentLevel
@@ -590,8 +559,8 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                   });
                   
                   const allMembers = [...selectedUsers, ...groupAsMembers];
-                  console.log('변수 설정 모달에 전달할 전체 데이터:', allMembers);
-                  console.log('상세:', allMembers.map(m => ({
+                  logger.debug('변수 설정 모달에 전달할 전체 데이터', allMembers);
+                  logger.debug('상세', allMembers.map(m => ({
                     name: m.name,
                     'studentInfo 전체': m.studentInfo,
                     'studentInfo.currentLevel': m.studentInfo?.currentLevel,
@@ -599,38 +568,36 @@ export default function MemberSelectModal({ isOpen, onClose, onSelect, multiSele
                     'Object.keys': Object.keys(m)
                   })));
                   
-                  console.log('🚀 showVariablesModal 호출 - 첫 번째 회원:', allMembers[0]);
-                  console.log('🚀 첫 번째 회원 keys:', Object.keys(allMembers[0]));
+                  logger.debug('showVariablesModal 호출 - 첫 번째 회원', allMembers[0]);
+                  logger.debug('첫 번째 회원 keys', Object.keys(allMembers[0]));
                   
                   // 명시적으로 전체 데이터 확인
-                  console.log('🔍 데이터 손실 체크:');
-                  console.log('  allMembers[0].studentInfo 존재?', !!allMembers[0].studentInfo);
-                  console.log('  allMembers[0].level 존재?', !!(allMembers[0] as any).level);
+                  logger.debug('데이터 손실 체크', {
+                    studentInfoExists: !!allMembers[0]?.studentInfo,
+                    levelExists: !!(allMembers[0] as any)?.level
+                  });
                   
-                  if (!allMembers[0].studentInfo && !(allMembers[0] as any).level) {
-                    console.error('❌ 데이터 손실 감지!');
-                    console.error('selectedUsers 배열:', selectedUsers);
-                    console.error('selectedUsers 길이:', selectedUsers.length);
-                    if (selectedUsers.length > 0) {
-                      console.error('selectedUsers[0] 전체:', selectedUsers[0]);
-                      console.error('selectedUsers[0] keys:', Object.keys(selectedUsers[0]));
-                      console.error('selectedUsers[0].studentInfo:', selectedUsers[0].studentInfo);
-                    }
-                    console.error('groupAsMembers[0]:', groupAsMembers[0]);
+                  if (!allMembers[0]?.studentInfo && !(allMembers[0] as any)?.level) {
+                    logger.error('데이터 손실 감지!', {
+                      selectedUsers,
+                      selectedUsersLength: selectedUsers.length,
+                      firstSelectedUser: selectedUsers[0],
+                      firstGroupMember: groupAsMembers[0]
+                    });
                   }
                   
                   if (showVariablesModal) {
-                    console.log('✅ showVariablesModal 함수 호출');
+                    logger.debug('showVariablesModal 함수 호출');
                     showVariablesModal(allMembers as any);
                   } else {
-                    console.error('❌ showVariablesModal prop이 없음!');
+                    logger.error('showVariablesModal prop이 없음!');
                   }
                   onClose();
                   return;
                 }
                 
                 // 나머지 케이스: 바로 추가
-                console.log('→ 단일 선택 또는 혼합: 바로 추가');
+                logger.debug('→ 단일 선택 또는 혼합: 바로 추가');
                 const combined = [...selectedUsers, ...groupProfiles];
                 onMultiSelect?.(combined as any);
                 setSelectedUsers([]);

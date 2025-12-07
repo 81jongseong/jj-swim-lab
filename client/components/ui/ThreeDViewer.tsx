@@ -19,6 +19,7 @@ import React, { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats } from '@react-three/drei';
 import { ErrorBoundary } from './errorboundary';
+import { logger } from '@/lib/logger';
 
 interface ThreeDViewerProps {
   className?: string;
@@ -100,7 +101,7 @@ export function ThreeDViewer({
   const [hasError, setHasError] = useState(false);
 
   const handleError = useCallback((error: Error) => {
-    console.error('3D 뷰어 오류:', error);
+    logger.error('3D 뷰어 오류:', error);
     setHasError(true);
     onError?.(error);
   }, [onError]);
@@ -162,4 +163,5 @@ export function ThreeDViewer({
 }
 
 export default ThreeDViewer;
+
 

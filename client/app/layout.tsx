@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Outfit } from 'next/font/google'
 import { AuthProvider } from 'hooks/useAuth'
 import Navigation from '../components/Navigation'
 // import EnhancedOfflineIndicator from '../components/EnhancedOfflineIndicator'
@@ -8,7 +8,8 @@ import Navigation from '../components/Navigation'
 // import ServiceWorkerRegistration from './sw-register'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-heading' })
 
 export const viewport = {
   width: 'device-width',
@@ -81,16 +82,16 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ko" suppressHydrationWarning className="h-full">
-      <body className={`${inter.className} bg-background text-foreground antialiased h-full`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-background text-foreground antialiased h-full`} suppressHydrationWarning>
         <AuthProvider>
           {/* 통합 네비게이션 시스템 */}
           <Navigation />
-          
+
           {/* 메인 콘텐츠 */}
           <main className="min-h-screen pt-16">
             {children}
           </main>
-          
+
           {/* PWA 및 오프라인 기능 (임시 비활성화) */}
           {/* <EnhancedOfflineIndicator /> */}
           {/* <PWAInstallPrompt /> */}

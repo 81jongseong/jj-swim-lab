@@ -73,9 +73,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Modal from './ui/modal';
-import Button from './ui/button';
-import { Input } from './ui/input';
+import { Modal, Button, Input, Textarea, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui';
 
 interface QuizQuestion {
   question: string;
@@ -609,26 +607,29 @@ const QuizForm: React.FC<QuizFormProps> = ({
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">문제 내용 *</label>
-                <textarea
+                <Textarea
                   value={newQuestion.question || ''}
                   onChange={(e) => updateNewQuestion('question', e.target.value)}
                   placeholder="문제 내용을 입력하세요"
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">문제 유형</label>
-                  <select
+                  <Select
                     value={newQuestion.type || 'multiple-choice'}
-                    onChange={(e) => updateNewQuestion('type', e.target.value as 'multiple-choice' | 'essay')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onValueChange={(value) => updateNewQuestion('type', value as 'multiple-choice' | 'essay')}
                   >
-                    <option value="multiple-choice">4지선다</option>
-                    <option value="essay">주관식</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="문제 유형 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multiple-choice">4지선다</SelectItem>
+                      <SelectItem value="essay">주관식</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -645,16 +646,20 @@ const QuizForm: React.FC<QuizFormProps> = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">정답</label>
                   {newQuestion.type === 'multiple-choice' ? (
-                    <select
-                      value={newQuestion.correctAnswer as number}
-                      onChange={(e) => updateNewQuestion('correctAnswer', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <Select
+                      value={(newQuestion.correctAnswer as number).toString()}
+                      onValueChange={(value) => updateNewQuestion('correctAnswer', Number(value))}
                     >
-                      <option value={0}>1번</option>
-                      <option value={1}>2번</option>
-                      <option value={2}>3번</option>
-                      <option value={3}>4번</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="정답 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">1번</SelectItem>
+                        <SelectItem value="1">2번</SelectItem>
+                        <SelectItem value="2">3번</SelectItem>
+                        <SelectItem value="3">4번</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <Input
                       value={newQuestion.correctAnswer as string}

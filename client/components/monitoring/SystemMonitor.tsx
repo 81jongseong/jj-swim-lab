@@ -4,12 +4,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
-import Card from '@/components/ui/card';
-import Button from '@/components/ui/button';
+import { Card } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@/components/ui';
 import { RefreshCw, Server, Users, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface SystemStatus {
@@ -105,7 +106,7 @@ const SystemMonitor: React.FC = () => {
         setUserActivities(activitiesData.data.activities);
       }
     } catch (error) {
-      console.error('모니터링 데이터 로드 실패:', error);
+      logger.error('모니터링 데이터 로드 실패:', error);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,8 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
+import { LoadingState } from '@/components/common';
 import { 
   Calculator, 
   Activity, 
@@ -178,7 +180,7 @@ export default function CenterAdminExerciseCalculatorPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
     // 실제로는 서버에 저장
-    console.log('결과 저장:', results);
+    logger.info('결과 저장:', results);
   };
 
   const getBMICategory = (bmi: number) => {
@@ -366,10 +368,7 @@ export default function CenterAdminExerciseCalculatorPage() {
                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    계산 중...
-                  </>
+                  <LoadingState message="계산 중..." size="sm" className="flex-row text-white" />
                 ) : (
                   <>
                     <Calculator className="w-4 h-4 mr-2" />

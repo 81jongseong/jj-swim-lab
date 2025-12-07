@@ -1,11 +1,4 @@
-/**
- * PT 수업 진행 및 완료 관리 컴포넌트
- * 헬스 PT 관리 시스템 스타일로 수업 진행 상황을 관리합니다.
- * 
- * 연동 데이터: 수업 일정, 수강생 정보, 패키지 정보, 수업 진행 기록
- * 연동 파일: InstructorStudentManagement.tsx, PersonalLesson.ts, CenterSchedule.ts
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calendar, 
@@ -156,7 +149,7 @@ export default function PTLessonProgress({
         }
       });
       const data = await response.json();
-      console.log('강사 목록 API 응답:', data);
+      logger.info('강사 목록 API 응답:', data);
       
       if (data.success && data.data) {
         // API 응답 구조: { success: true, data: { instructors: [...], pagination: {...} } }
@@ -170,7 +163,7 @@ export default function PTLessonProgress({
         }
       }
     } catch (error) {
-      console.error('강사 목록 조회 실패:', error);
+      logger.error('강사 목록 조회 실패:', error);
       setInstructors([]);
     }
   };
@@ -178,7 +171,7 @@ export default function PTLessonProgress({
   const fetchLessons = async () => {
     try {
       setLoading(true);
-      console.log('📅 수업 일정 조회 요청:', { instructorId, selectedDate });
+      logger.info('📅 수업 일정 조회 요청:', { instructorId, selectedDate });
       
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5000/api/center-admin/instructors/${instructorId}/lessons?date=${selectedDate}`, {
@@ -190,16 +183,16 @@ export default function PTLessonProgress({
       
       const data = await response.json();
       
-      console.log('📅 수업 일정 조회 응답:', data);
+      logger.info('📅 수업 일정 조회 응답:', data);
       
       if (data.success) {
-        console.log('✅ 수업 일정 설정:', data.data.length, '개');
+        logger.info('✅ 수업 일정 설정:', data.data.length, '개');
         setLessons(data.data);
       } else {
-        console.error('❌ 수업 일정 조회 실패:', data.message);
+        logger.error('❌ 수업 일정 조회 실패:', data.message);
       }
     } catch (error) {
-      console.error('❌ 수업 데이터 조회 실패:', error);
+      logger.error('❌ 수업 데이터 조회 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -236,16 +229,16 @@ export default function PTLessonProgress({
   };
 
   const handleCourseClick = async (e: React.MouseEvent | React.KeyboardEvent, course: CourseGroup) => {
-    console.log('카드 클릭됨:', course);
-    console.log('🔍 현재 선택한 강사 ID (props):', instructorId);
-    console.log('🔍 수업의 담당 강사 ID (course):', course.instructorId);
+    logger.info('카드 클릭됨:', course);
+    logger.info('🔍 현재 선택한 강사 ID (props):', instructorId);
+    logger.info('🔍 수업의 담당 강사 ID (course):', course.instructorId);
     
     setSelectedCourse(course);
     
     // 과정 상세 정보 조회
     try {
       const token = localStorage.getItem('token');
-      console.log('과정 정보 조회:', course.courseId);
+      logger.info('과정 정보 조회:', course.courseId);
       const response = await fetch(`http://localhost:5000/api/courses/${course.courseId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -253,7 +246,7 @@ export default function PTLessonProgress({
         }
       });
       const data = await response.json();
-      console.log('과정 정보 응답:', data);
+      logger.info('과정 정보 응답:', data);
       
       const courseData = data.success ? data.data : data;
       if (courseData) {
@@ -272,7 +265,7 @@ export default function PTLessonProgress({
         };
         setSelectedCourse(updatedCourse);
         
-        console.log('수정 폼 설정:', {
+        logger.info('수정 폼 설정:', {
           courseName: currentCourseName,
           instructorId: currentInstructorId,
           instructorActive
@@ -283,7 +276,7 @@ export default function PTLessonProgress({
         const courseInstructorIdStr = currentInstructorId?.toString() || String(currentInstructorId || '');
         const isCurrentInstructor = propsInstructorIdStr === courseInstructorIdStr;
         
-        console.log('🔍 기존 강사 비교:', {
+        logger.info('🔍 기존 강사 비교:', {
           propsInstructorIdStr,
           courseInstructorIdStr,
           isCurrentInstructor,
@@ -300,18 +293,18 @@ export default function PTLessonProgress({
         setOriginalCourseName(currentCourseName);
         setShowEditModal(true);
         
-        console.log('✅ 수업 수정 모달 열기:', {
+        logger.info('✅ 수업 수정 모달 열기:', {
           currentInstructorId,
           instructorId,
           isCurrentInstructor,
           courseName: currentCourseName
         });
       } else {
-        console.error('과정 정보를 찾을 수 없습니다.');
+        logger.error('과정 정보를 찾을 수 없습니다.');
         alert('과정 정보를 불러올 수 없습니다.');
       }
     } catch (error) {
-      console.error('과정 정보 조회 실패:', error);
+      logger.error('과정 정보 조회 실패:', error);
     }
   };
 
@@ -368,7 +361,7 @@ export default function PTLessonProgress({
       setShowEditModal(false);
       alert('변경사항이 저장되었습니다.');
     } catch (error) {
-      console.error('변경사항 저장 실패:', error);
+      logger.error('변경사항 저장 실패:', error);
       alert('변경사항 저장에 실패했습니다.');
     }
   };
@@ -433,7 +426,7 @@ export default function PTLessonProgress({
             failCount++;
           }
         } catch (error) {
-          console.error(`반 ${course.courseName} 변경 실패:`, error);
+          logger.error(`반 ${course.courseName} 변경 실패:`, error);
           failCount++;
         }
       }
@@ -443,7 +436,7 @@ export default function PTLessonProgress({
       setBulkChangeForm({ oldInstructorId: '', newInstructorId: '' });
       await fetchLessons();
     } catch (error) {
-      console.error('일괄 변경 실패:', error);
+      logger.error('일괄 변경 실패:', error);
       alert('일괄 변경에 실패했습니다.');
     }
   };
@@ -499,7 +492,7 @@ export default function PTLessonProgress({
               <div 
                 key={course._id} 
                 onClick={(e) => {
-                  console.log('카드 클릭 이벤트 발생');
+                  logger.info('카드 클릭 이벤트 발생');
                   handleCourseClick(e, course);
                 }}
                 className={`bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border-2 ${getLevelColor(course.level, course.instructorActive).split(' ')[0]} overflow-hidden cursor-pointer select-none ${course.instructorActive === false ? 'opacity-60' : ''}`}
@@ -634,7 +627,7 @@ export default function PTLessonProgress({
                 
                 const isCurrentInstructor = propsInstructorIdStr === courseInstructorIdStr;
                 
-                console.log('🔍 담당 강사 드롭다운 상태 (모달 렌더링):', {
+                logger.info('🔍 담당 강사 드롭다운 상태 (모달 렌더링):', {
                   propsInstructorIdStr,
                   courseInstructorIdStr,
                   editFormInstructorIdStr,
@@ -657,7 +650,7 @@ export default function PTLessonProgress({
                       onChange={(e) => {
                         // 기존 강사의 수업인 경우 변경 불가
                         if (isCurrentInstructor) {
-                          console.log('⚠️ 기존 강사의 수업은 변경할 수 없습니다.');
+                          logger.info('⚠️ 기존 강사의 수업은 변경할 수 없습니다.');
                           e.preventDefault();
                           return;
                         }
@@ -774,7 +767,7 @@ export default function PTLessonProgress({
                         
                         // 현재 선택한 강사는 선택할 수 없음
                         if (selectedIdStr === propsInstructorIdStr) {
-                          console.log('⚠️ 현재 선택한 강사는 기존 강사로 선택할 수 없습니다.');
+                          logger.info('⚠️ 현재 선택한 강사는 기존 강사로 선택할 수 없습니다.');
                           return;
                         }
                         setBulkChangeForm(prev => ({ ...prev, oldInstructorId: e.target.value }));

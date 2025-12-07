@@ -11,16 +11,18 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, LoadingSpinner } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import { Users, Search, AlertCircle, Ticket, Calendar, User as UserIcon } from 'lucide-react';
 import withAuth from '@/components/withAuth';
 import MemberDetailModal from '@/components/center-admin/MemberDetailModal';
 import CourseAssignmentModal from '@/components/center-admin/CourseAssignmentModal';
 import MemberMemoModal from '@/components/center-admin/MemberMemoModal';
+import { ConfirmModal } from '@/components/common';
 
 interface LessonTicket {
   _id: string;
@@ -99,6 +101,19 @@ function CenterUsersManagement() {
   const [levelFilter, setLevelFilter] = useState('');
   const [memoFilter, setMemoFilter] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
@@ -130,7 +145,7 @@ function CenterUsersManagement() {
         }
       }
     } catch (error) {
-      console.error('회원 목록 로드 실패:', error);
+      logger.error('회원 목록 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +168,7 @@ function CenterUsersManagement() {
         }
       }
     } catch (error) {
-      console.error('통계 로드 실패:', error);
+      logger.error('통계 로드 실패:', error);
     }
   };
 
@@ -174,7 +189,7 @@ function CenterUsersManagement() {
         }
       }
     } catch (error) {
-      console.error('강습 과정 로드 실패:', error);
+      logger.error('강습 과정 로드 실패:', error);
     }
   };
 
@@ -194,7 +209,7 @@ function CenterUsersManagement() {
         loadMembers();
       }
     } catch (error) {
-      console.error('상태 변경 실패:', error);
+      logger.error('상태 변경 실패:', error);
     }
   };
 
@@ -214,7 +229,7 @@ function CenterUsersManagement() {
         loadMembers();
       }
     } catch (error) {
-      console.error('메모 업데이트 실패:', error);
+      logger.error('메모 업데이트 실패:', error);
     }
   };
 
@@ -233,7 +248,7 @@ function CenterUsersManagement() {
         loadMembers();
       }
     } catch (error) {
-      console.error('메모 삭제 실패:', error);
+      logger.error('메모 삭제 실패:', error);
     }
   };
 
@@ -256,36 +271,41 @@ function CenterUsersManagement() {
         alert('과정 배정에 실패했습니다.');
       }
     } catch (error) {
-      console.error('과정 배정 오류:', error);
+      logger.error('과정 배정 오류:', error);
       alert('과정 배정 중 오류가 발생했습니다.');
     }
   };
 
   const handleCourseUnassignment = async (memberId: string, courseId: string) => {
-    if (!confirm('과정 배정을 취소하시겠습니까?')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '과정 배정을 취소하시겠습니까?',
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/data-center-admin/members/${memberId}/course/${courseId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/data-center-admin/members/${memberId}/course/${courseId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          if (response.ok) {
+            alert('과정 배정이 취소되었습니다.');
+            loadMembers();
+          } else {
+            alert('과정 배정 취소에 실패했습니다.');
+          }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error) {
+          logger.error('과정 배정 취소 오류:', error);
+          alert('과정 배정 취소 중 오류가 발생했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
         }
-      });
-
-      if (response.ok) {
-        alert('과정 배정이 취소되었습니다.');
-        loadMembers();
-      } else {
-        alert('과정 배정 취소에 실패했습니다.');
       }
-    } catch (error) {
-      console.error('과정 배정 취소 오류:', error);
-      alert('과정 배정 취소 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const filteredMembers = members.filter(member => {
@@ -504,6 +524,18 @@ function CenterUsersManagement() {
         member={selectedMember}
         onUpdateMemo={handleUpdateMemo}
         onDeleteMemo={handleDeleteMemo}
+      />
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
       />
     </div>
   );

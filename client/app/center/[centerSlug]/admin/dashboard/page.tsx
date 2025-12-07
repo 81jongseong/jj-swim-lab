@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 
@@ -21,7 +22,7 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Users, BookOpen, DollarSign, Calendar, AlertCircle, CheckCircle, Clock, Settings, TrendingUp } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import QuickActionCard from '@/components/center-admin/QuickActionCard';
 
@@ -120,7 +121,7 @@ const CenterAdminDashboard: React.FC = () => {
       if (!user) return;
 
       try {
-        if (DEBUG) console.log('📊 센터 데이터 로드 중...');
+        if (DEBUG) logger.info('📊 센터 데이터 로드 중...');
         
         // 관리하는 센터 목록
         const managedCenters = user.centerAdminInfo?.managedCenters || [];
@@ -204,7 +205,7 @@ const CenterAdminDashboard: React.FC = () => {
         }
         
       } catch (error) {
-        if (DEBUG) console.error('❌ 센터 데이터 로드 실패:', error);
+        if (DEBUG) logger.error('❌ 센터 데이터 로드 실패:', error);
       }
     };
 

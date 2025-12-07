@@ -7,7 +7,12 @@
  * - 승인 상태별 필터링
  * - 승인 이력 관리
  * - 승인 통계 조회
+ * 
+ * 🔗 **연동 파일**:
+ * - client/app/admin/approvals/page.tsx
  */
+
+import { logger } from '@/lib/logger';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -57,7 +62,7 @@ export const getApprovals = async (params?: {
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('승인 요청 목록 조회 실패:', error);
+    logger.error('승인 요청 목록 조회 실패:', error);
     throw error;
   }
 };
@@ -71,7 +76,7 @@ export const getApprovalDetail = async (id: string) => {
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('승인 요청 상세 조회 실패:', error);
+    logger.error('승인 요청 상세 조회 실패:', error);
     throw error;
   }
 };
@@ -86,7 +91,7 @@ export const processApproval = async (id: string, action: 'approve' | 'reject', 
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('승인 처리 실패:', error);
+    logger.error('승인 처리 실패:', error);
     throw error;
   }
 };
@@ -100,7 +105,7 @@ export const getApprovalStats = async () => {
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('승인 통계 조회 실패:', error);
+    logger.error('승인 통계 조회 실패:', error);
     throw error;
   }
 };

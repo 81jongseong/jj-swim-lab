@@ -6,13 +6,15 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button } from '../../../components/ui';
-import { Card } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui';
 import { Input } from '../../../components/ui';
 import { Badge } from '../../../components/ui';
+import { ConfirmModal, ErrorState, LoadingState, PageHeader } from '@/components/common';
 
 // AI 모델 카테고리 상수
 const AI_MODEL_CATEGORIES = [
@@ -82,8 +84,22 @@ export default function AIModelManagementPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<AIModel | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{
     total: number;
     byCategory: { [key: string]: number };
@@ -106,9 +122,10 @@ export default function AIModelManagementPage() {
   const fetchModels = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('❌ JWT 토큰이 없습니다.');
+        setError('JWT 토큰이 없습니다. 로그인이 필요합니다.');
         return;
       }
 
@@ -119,22 +136,21 @@ export default function AIModelManagementPage() {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const apiModels = data.data || data;
-        
-        if (Array.isArray(apiModels)) {
-          setModels(apiModels);
-        } else {
-          console.error('❌ AI 모델 데이터 형식 오류:', apiModels);
-          setModels([]);
-        }
-      } else {
-        console.error('❌ AI 모델 조회 실패:', response.status);
-        setModels([]);
+      if (!response.ok) {
+        throw new Error('AI 모델을 불러오는데 실패했습니다.');
       }
-    } catch (error) {
-      console.error('❌ AI 모델 조회 중 오류:', error);
+
+      const data = await response.json();
+      const apiModels = data.data || data;
+      
+      if (Array.isArray(apiModels)) {
+        setModels(apiModels);
+      } else {
+        throw new Error('AI 모델 데이터 형식이 올바르지 않습니다.');
+      }
+    } catch (err: any) {
+      logger.error('❌ AI 모델 조회 중 오류:', err);
+      setError(err.message || 'AI 모델을 불러오는데 실패했습니다.');
       setModels([]);
     } finally {
       setLoading(false);
@@ -239,40 +255,49 @@ export default function AIModelManagementPage() {
         alert(`오류: ${errorData.message || 'AI 모델 저장에 실패했습니다.'}`);
       }
     } catch (error) {
-      console.error('❌ AI 모델 저장 중 오류:', error);
+      logger.error('❌ AI 모델 저장 중 오류:', error);
       alert('AI 모델 저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async (modelId: string) => {
-    if (!confirm('이 AI 모델을 삭제하시겠습니까?')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '이 AI 모델을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            alert('로그인이 필요합니다.');
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+            return;
+          }
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('로그인이 필요합니다.');
-        return;
-      }
+          const response = await fetch(`http://localhost:5000/api/ai/models/${modelId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
 
-      const response = await fetch(`http://localhost:5000/api/ai/models/${modelId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          if (response.ok) {
+            alert('AI 모델이 삭제되었습니다!');
+            fetchModels();
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          } else {
+            const errorData = await response.json();
+            alert(`오류: ${errorData.message || 'AI 모델 삭제에 실패했습니다.'}`);
+            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+          }
+        } catch (error) {
+          logger.error('❌ AI 모델 삭제 중 오류:', error);
+          alert('AI 모델 삭제 중 오류가 발생했습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
         }
-      });
-
-      if (response.ok) {
-        alert('AI 모델이 삭제되었습니다!');
-        fetchModels();
-      } else {
-        const errorData = await response.json();
-        alert(`오류: ${errorData.message || 'AI 모델 삭제에 실패했습니다.'}`);
       }
-    } catch (error) {
-      console.error('❌ AI 모델 삭제 중 오류:', error);
-      alert('AI 모델 삭제 중 오류가 발생했습니다.');
-    }
+    });
   };
 
   const handleTrain = async (modelId: string) => {
@@ -299,7 +324,7 @@ export default function AIModelManagementPage() {
         alert(`오류: ${errorData.message || 'AI 모델 학습 시작에 실패했습니다.'}`);
       }
     } catch (error) {
-      console.error('❌ AI 모델 학습 중 오류:', error);
+      logger.error('❌ AI 모델 학습 중 오류:', error);
       alert('AI 모델 학습 중 오류가 발생했습니다.');
     }
   };
@@ -325,18 +350,37 @@ export default function AIModelManagementPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
+        <LoadingState message="AI 모델 정보를 불러오는 중..." size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            fetchModels();
+          }}
+          retryText="다시 시도"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            🤖 AI 모델 관리 시스템
-          </h1>
-          <p className="mt-2 text-gray-600">
-            수영 교육을 위한 AI 모델을 등록하고 관리합니다.
-          </p>
-        </div>
+        <PageHeader
+          title="🤖 AI 모델 관리 시스템"
+          description="수영 교육을 위한 AI 모델을 등록하고 관리합니다."
+        />
 
         {/* 통계 섹션 */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
@@ -959,6 +1003,18 @@ export default function AIModelManagementPage() {
           </div>
         )}
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect, useState } from 'react';
 import { calculateRaceGoalFeasibility, type FeasibilityResult } from '@/lib/swimlab/raceGoalFeasibility';
@@ -52,7 +53,7 @@ export default function FeasibilityChecker({
                           ((level || 'intermediate').includes('advanced') || (level || 'intermediate').includes('master') || (level || 'intermediate').includes('expert')) ? 'elite' as const : 
                           'trained' as const;
 
-      console.log('🎯 실현 가능성 계산 입력:', {
+      logger.info('🎯 실현 가능성 계산 입력:', {
         distance,
         stroke,
         currentTime,
@@ -80,10 +81,10 @@ export default function FeasibilityChecker({
         level: swimmerLevel
       });
 
-      console.log('✅ 실현 가능성 결과:', feasibility);
+      logger.info('✅ 실현 가능성 결과:', feasibility);
       setResult(feasibility);
     } catch (error) {
-      console.error('실현 가능성 계산 오류:', error);
+      logger.error('실현 가능성 계산 오류:', error);
       setResult(null);
     }
   }, [currentTime, targetTime, raceDate, distance, stroke, level, css]);

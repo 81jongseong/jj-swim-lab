@@ -54,6 +54,12 @@ interface CardGridProps {
   gap?: 2 | 3 | 4 | 6 | 8;
   /** 추가 클래스명 */
   className?: string;
+  /** @deprecated - mobileCols 사용 권장 */
+  cols?: 1 | 2;
+  /** @deprecated - mobileCols 사용 권장 */
+  mdCols?: 2 | 3 | 4;
+  /** @deprecated - desktopCols 사용 권장 */
+  lgCols?: 2 | 3 | 4 | 5 | 6;
 }
 
 /**
@@ -63,11 +69,17 @@ interface CardGridProps {
  */
 export default function CardGrid({
   children,
-  mobileCols = 2,
-  desktopCols = 4,
+  mobileCols,
+  desktopCols,
   gap = 4,
-  className = ''
+  className = '',
+  cols,
+  mdCols,
+  lgCols
 }: CardGridProps) {
+  // 레거시 props 지원
+  const actualMobileCols = mobileCols ?? cols ?? 2;
+  const actualDesktopCols = desktopCols ?? lgCols ?? mdCols ?? 4;
   // Tailwind 동적 클래스명 문제 해결을 위해 명시적 클래스 매핑
   const mobileColsMap: Record<1 | 2, string> = {
     1: 'grid-cols-1',
@@ -90,7 +102,7 @@ export default function CardGrid({
     8: 'gap-8'
   };
 
-  const gridColsClass = `${mobileColsMap[mobileCols]} ${desktopColsMap[desktopCols]}`;
+  const gridColsClass = `${mobileColsMap[actualMobileCols as 1 | 2]} ${desktopColsMap[actualDesktopCols as 2 | 3 | 4 | 5 | 6]}`;
   const gapClass = gapMap[gap];
 
   return (

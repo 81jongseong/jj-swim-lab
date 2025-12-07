@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Activity, Target, Calendar, TrendingUp, Plus, Edit, Trash2 } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState } from '@/components/common';
 
 interface HealthProgram {
   _id: string;
@@ -120,7 +122,7 @@ function HealthProgramsPage() {
       ];
       setPrograms(tempPrograms);
     } catch (error) {
-      console.error('건강 프로그램 로드 실패:', error);
+      logger.error('건강 프로그램 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +187,7 @@ function HealthProgramsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }

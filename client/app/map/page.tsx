@@ -12,7 +12,8 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
+import { logger } from '@/lib/logger';
 import MapHeader from '@/components/map/MapHeader';
 import SearchTabs from '@/components/map/SearchTabs';
 import UnifiedRegionSelector, { CITIES_BY_PROVINCE } from '@/components/common/UnifiedRegionSelector';
@@ -179,7 +180,7 @@ export default function MapPage() {
         const location = JSON.parse(savedUserLocation);
         setUserLocation(location);
       } catch (e) {
-        console.error('Failed to parse saved user location:', e);
+        logger.error('Failed to parse saved user location:', e);
       }
     }
   }, []);
@@ -322,7 +323,7 @@ export default function MapPage() {
           }
         },
         (error) => {
-          console.error('위치 정보를 가져올 수 없습니다:', error);
+          logger.error('위치 정보를 가져올 수 없습니다:', error);
           alert('위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요.');
         }
       );
@@ -884,12 +885,12 @@ export default function MapPage() {
     const loadCenters = async () => {
       try {
         setCentersLoading(true);
-        console.log('🔍 실제 센터 데이터 로딩 중...');
+        logger.info('실제 센터 데이터 로딩 중');
         
         const response = await fetch('http://localhost:5000/api/centers/guest');
         const data = await response.json();
         
-        console.log('✅ 센터 데이터 로드 완료:', data);
+        logger.api('센터 데이터 로드 완료', data);
         
         // API 데이터를 SwimmingCenter 인터페이스로 변환
         const transformedCenters: SwimmingCenter[] = (data || []).map((center: any, index: number) => {
@@ -898,7 +899,7 @@ export default function MapPage() {
           if (process.env.NODE_ENV !== 'production') {
             const normalizedAddress = normalizeAddress(center.address);
             const matchedSample = sampleLookups.addressMap.has(normalizedAddress);
-            console.log('📍 센터 좌표 변환', {
+            logger.debug('센터 좌표 변환', {
               name: center.name,
               address: center.address,
               lat,
@@ -963,9 +964,9 @@ export default function MapPage() {
         });
         
         setRealCenters(transformedCenters);
-        console.log('✅ 변환된 센터 수:', transformedCenters.length);
+        logger.success(`변환된 센터 수: ${transformedCenters.length}`);
       } catch (error) {
-        console.error('❌ 센터 데이터 로드 실패:', error);
+        logger.error('센터 데이터 로드 실패:', error);
         setRealCenters([]);
       } finally {
         setCentersLoading(false);
@@ -989,13 +990,13 @@ export default function MapPage() {
           link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
           document.head.appendChild(link);
 
-          console.log('✅ Leaflet 라이브러리 로딩 완료');
+          logger.success('Leaflet 라이브러리 로딩 완료');
           
           // Leaflet 로딩 완료 상태 설정
           setLeafletReady(true);
         }
       } catch (error) {
-        console.error('❌ Leaflet 로딩 오류:', error);
+        logger.error('Leaflet 로딩 오류:', error);
       }
     };
 
@@ -1004,7 +1005,7 @@ export default function MapPage() {
 
   // 지도 초기화
   useEffect(() => {
-    console.log('🔍 지도 초기화 useEffect 실행:', { 
+    logger.debug('지도 초기화 useEffect 실행', { 
       hasMapRef: !!mapRef.current, 
       hasL: !!L,
       leafletReady,
@@ -1012,30 +1013,30 @@ export default function MapPage() {
     });
 
     if (!mapRef.current) {
-      console.log('⚠️ mapRef.current 없음');
+      logger.warn('mapRef.current 없음');
       return;
     }
     
     if (!L) {
-      console.log('⚠️ Leaflet 라이브러리 없음');
+      logger.warn('Leaflet 라이브러리 없음');
       return;
     }
 
     if (!leafletReady) {
-      console.log('⚠️ Leaflet 준비 안됨');
+      logger.warn('Leaflet 준비 안됨');
       return;
     }
     
     // 이미 초기화되었으면 스킵
     if (mapInstanceRef.current) {
-      console.log('⚠️ 지도가 이미 초기화되어 있습니다');
+      logger.warn('지도가 이미 초기화되어 있습니다');
       return;
     }
 
     const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY || 'demo_key';
 
-    console.log('🔑 VWorld 키 확인:', VWORLD_KEY);
-    console.log('📍 지도 초기화 시작...');
+    logger.debug('VWorld 키 확인', { key: VWORLD_KEY });
+    logger.info('지도 초기화 시작');
 
     // 지도 생성
     const map = L.map(mapRef.current).setView([37.5665, 126.9780], 11);
@@ -1045,7 +1046,7 @@ export default function MapPage() {
     let tileLayer;
     
     if (VWORLD_KEY && VWORLD_KEY !== 'demo_key') {
-      console.log('🗺️ VWorld 타일 시도 중...');
+      logger.info('VWorld 타일 시도 중');
       
       // VWorld Base Map (XYZ 타일 형식)
       tileLayer = L.tileLayer(
@@ -1061,10 +1062,8 @@ export default function MapPage() {
       tileLayer.on('tileerror', (error: any) => {
         tileErrorCount++;
         if (tileErrorCount === 1) {
-          console.error('❌ VWorld 타일 로딩 실패');
-          console.log('🔑 키:', VWORLD_KEY);
-          console.log('📍 타일 URL:', error.tile?.src);
-          console.log('⚠️ OSM 타일로 대체합니다...');
+          logger.error('VWorld 타일 로딩 실패', { key: VWORLD_KEY, tileUrl: error.tile?.src });
+          logger.warn('OSM 타일로 대체합니다');
           
           // VWorld 레이어 제거하고 OSM으로 교체
           map.removeLayer(tileLayer);
@@ -1077,11 +1076,11 @@ export default function MapPage() {
 
       tileLayer.on('tileload', () => {
         if (tileErrorCount === 0) {
-          console.log('✅ VWorld 타일 로딩 성공');
+          logger.success('VWorld 타일 로딩 성공');
         }
       });
     } else {
-      console.log('🗺️ VWorld 키가 없어 OSM 타일 사용');
+      logger.info('VWorld 키가 없어 OSM 타일 사용');
       tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
@@ -1090,7 +1089,7 @@ export default function MapPage() {
 
     tileLayer.addTo(map);
 
-    console.log('🗺️ VWorld + Leaflet 지도 초기화 완료');
+    logger.success('VWorld + Leaflet 지도 초기화 완료');
 
     mapInstanceRef.current = map;
     setMapReady(true);
@@ -1098,7 +1097,7 @@ export default function MapPage() {
     // 정리 함수
     return () => {
       if (map) {
-        console.log('🗑️ 지도 정리 중...');
+        logger.info('지도 정리 중');
         map.remove();
         mapInstanceRef.current = null;
       }
@@ -1108,7 +1107,7 @@ export default function MapPage() {
   // 🆕 필터링된 센터를 지도에 마커로 표시
   useEffect(() => {
     if (!mapInstanceRef.current || !L || !mapReady) {
-      console.log('⚠️ 지도 또는 Leaflet이 준비되지 않음');
+      logger.warn('지도 또는 Leaflet이 준비되지 않음');
       return;
     }
 
@@ -1118,7 +1117,7 @@ export default function MapPage() {
     });
     markersRef.current = [];
 
-    console.log('🎯 필터링된 센터 마커 추가:', sortedCenters.length, '개');
+    logger.info('필터링된 센터 마커 추가', { count: sortedCenters.length });
 
     // 정렬된 센터 마커 추가
     sortedCenters.forEach(center => {
@@ -1279,9 +1278,9 @@ export default function MapPage() {
         }, 5000);
       }
 
-      console.log(`✅ 주소 검색 성공: ${targetAddress} → (${lng}, ${lat})`);
+      logger.success(`주소 검색 성공: ${targetAddress} → (${lng}, ${lat})`);
     } catch (error) {
-      console.error('❌ 주소 검색 오류:', error);
+      logger.error('주소 검색 오류:', error);
       alert('주소 검색 중 오류가 발생했습니다.');
     } finally {
       setSearchLoading(false);
@@ -1320,11 +1319,11 @@ export default function MapPage() {
               searchTerm=""
               onSearchTermChange={(term) => {
                 // 센터명 검색어로 필터링 로직 추가 가능
-                console.log('센터 검색어:', term);
+                logger.debug('센터 검색어', { term });
               }}
               onSearch={(term) => {
                 // 센터 검색 실행
-                console.log('센터 검색 실행:', term);
+                logger.debug('센터 검색 실행', { term });
               }}
               selectedRegions={selectedRegions}
               onRegionsChange={(regions) => {

@@ -15,6 +15,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState } from 'react';
 import { listAthletes, type AthleteProfile } from '@/lib/swimlab/utils/athletes';
@@ -169,7 +170,7 @@ export default function ProgramGeneratorPanel({
           const activeStrokes = mainStrokes.filter(s => !excludedStrokes.includes(s));
           
           if (activeStrokes.length === 0) {
-            console.warn(`선수 ${athlete.name}: 사용 가능한 영법이 없습니다.`);
+            logger.warn(`선수 ${athlete.name}: 사용 가능한 영법이 없습니다.`);
             return;
           }
           
@@ -178,9 +179,9 @@ export default function ProgramGeneratorPanel({
           try {
             const historyResponse = await apiClient.get(`/swim-programs/athlete/${athlete.id}/history`) as any;
             weekHistory = (historyResponse.data as any)?.weekHistory || [];
-            console.log(`📚 ${athlete.name}의 최근 3주 이력:`, weekHistory);
+            logger.info(`📚 ${athlete.name}의 최근 3주 이력:`, weekHistory);
           } catch (error) {
-            console.warn('이력 조회 실패, 기본값 사용:', error);
+            logger.warn('이력 조회 실패, 기본값 사용:', error);
             weekHistory = [];
           }
           
@@ -216,9 +217,9 @@ export default function ProgramGeneratorPanel({
           const dailyMeters = Math.round((actualSwimMinutes * 60) / (avgCSS / 100) / 25) * 25; // 25m 단위
           engineInput.weeklyMeters = dailyMeters * selectedDays.length;
           
-          console.log(`💡 거리 계산: 세션 ${sessionDuration}분 × 실제 70% = ${actualSwimMinutes}분, CSS ${avgCSS}초 → 일일 ${dailyMeters}m, 주간 ${engineInput.weeklyMeters}m`);
+          logger.info(`💡 거리 계산: 세션 ${sessionDuration}분 × 실제 70% = ${actualSwimMinutes}분, CSS ${avgCSS}초 → 일일 ${dailyMeters}m, 주간 ${engineInput.weeklyMeters}m`);
           
-          console.log(`🔍 프로그램 생성 입력:`, {
+          logger.info(`🔍 프로그램 생성 입력:`, {
             선수: athlete.name,
             컨디션IDs: athlete.conditionIds,
             염소민감포함: athlete.conditionIds?.includes('chlorine_sensitivity'),
@@ -234,7 +235,7 @@ export default function ProgramGeneratorPanel({
           
           const weeklyPlan = generateWeeklyPlan(engineInput);
           
-          console.log(`📊 생성된 계획:`, {
+          logger.info(`📊 생성된 계획:`, {
             목표: weeklyPlan.goal,
             계획설명: weeklyPlan.planExplanation,
             총거리: weeklyPlan.days.reduce((sum, d) => sum + d.totalMeters, 0),
@@ -339,7 +340,7 @@ export default function ProgramGeneratorPanel({
             });
           });
           
-          console.log(`🎯 ${athlete.name}의 사용된 훈련법:`, usedMethodIds);
+          logger.info(`🎯 ${athlete.name}의 사용된 훈련법:`, usedMethodIds);
           
           // MongoDB에 저장
           try {
@@ -381,9 +382,9 @@ export default function ProgramGeneratorPanel({
               usedMethodIds: usedMethodIds
             });
             
-            console.log(`✅ ${athlete.name}의 프로그램이 MongoDB에 저장되었습니다.`, (response.data as any)?.programId || 'ID 없음');
+            logger.info(`✅ ${athlete.name}의 프로그램이 MongoDB에 저장되었습니다.`, (response.data as any)?.programId || 'ID 없음');
           } catch (error) {
-            console.error('MongoDB 저장 실패, localStorage로 폴백:', error);
+            logger.error('MongoDB 저장 실패, localStorage로 폴백:', error);
             // 폴백: localStorage에 저장
           const program: SavedProgram = {
             id: `prog_${Date.now()}_${idx}_${athlete.id}`,
@@ -546,7 +547,7 @@ export default function ProgramGeneratorPanel({
         );
       }
     } catch (error) {
-      console.error('프로그램 생성 실패:', error);
+      logger.error('프로그램 생성 실패:', error);
       alert('프로그램 생성에 실패했습니다.');
     } finally {
       setGenerating(false);

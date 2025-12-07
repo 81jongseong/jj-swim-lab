@@ -30,6 +30,8 @@ import HeroWave from 'components/HeroWave';
 import WaterRippleBackground from 'components/WaterRippleBackground';
 import LottiePlayer from 'components/LottiePlayer';
 import { useAuth } from '../hooks/useAuth';
+import { logger } from '@/lib/logger';
+import { LoadingState } from '@/components/common';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -43,7 +45,7 @@ export default function HomePage() {
         // 센터 관리자는 센터 홈페이지로 리다이렉트 (대시보드가 아닌 소개 페이지)
         if (user.userType === 'centerAdmin' || user.userType === 'center-admin') {
           const slug = typeof window !== 'undefined' ? localStorage.getItem('centerSlug') || 'default' : 'default';
-          console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → /center/${slug}/admin/home`);
+          logger.debug(`홈페이지 리다이렉트: ${user.userType} → /center/${slug}/admin/home`);
           router.push(`/center/${slug}/admin/home`);
           return;
         }
@@ -58,10 +60,10 @@ export default function HomePage() {
         const targetRoute = dashboardRoutes[user.userType as keyof typeof dashboardRoutes];
 
         if (targetRoute) {
-          console.log(`🏠 홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
+          logger.debug(`홈페이지 리다이렉트: ${user.userType} → ${targetRoute}`);
           router.push(targetRoute);
         } else {
-          console.warn(`⚠️ 알 수 없는 사용자 유형: ${user.userType}`);
+          logger.warn(`알 수 없는 사용자 유형: ${user.userType}`);
           // 알 수 없는 유형은 랜딩 페이지 유지
           setShowLanding(true);
         }
@@ -76,10 +78,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">로딩 중...</p>
-        </div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -92,10 +91,7 @@ export default function HomePage() {
   // 기본 로딩 화면
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">페이지를 준비 중입니다...</p>
-      </div>
+      <LoadingState message="페이지를 준비 중입니다..." size="lg" />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -130,10 +131,10 @@ export const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
         setAnalysis(result.data.analysis);
         onAnalysisComplete?.(result.data.analysis);
       } else {
-        console.error('분석 실패:', await response.text());
+        logger.error('분석 실패:', await response.text());
       }
     } catch (error) {
-      console.error('분석 중 오류:', error);
+      logger.error('분석 중 오류:', error);
     } finally {
       setIsAnalyzing(false);
     }

@@ -15,7 +15,7 @@
 
 import { useState } from 'react';
 import UnifiedRegionSelector from '@/components/common/UnifiedRegionSelector';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface CenterSearchProps {
   /** 검색어 */

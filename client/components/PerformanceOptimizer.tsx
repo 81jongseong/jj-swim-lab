@@ -70,13 +70,15 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Button from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Progress } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Tabs는 index.ts에서 export되지 않으므로 직접 import
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
 interface PerformanceMetrics {
   memoryUsage: number;
@@ -206,7 +208,7 @@ function PerformanceOptimizer({ onOptimizationComplete }: PerformanceOptimizerPr
         renderTime
       });
     } catch (error) {
-      console.error('메트릭 수집 중 오류:', error);
+      logger.error('메트릭 수집 중 오류:', error);
     }
   }, []);
 

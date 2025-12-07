@@ -41,6 +41,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { CardGrid } from '@/components/common';
 
 export default function SwimProgramsPage() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -155,7 +156,7 @@ export default function SwimProgramsPage() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* 주요 지표 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardGrid gap={6}>
               <div className="bg-white p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-600">전체 회원</h3>
@@ -199,7 +200,7 @@ export default function SwimProgramsPage() {
                 <div className="text-2xl font-bold text-gray-900">{centerStats.avgAdherence}%</div>
                 <p className="text-xs text-gray-500">프로그램 참여율</p>
               </div>
-            </div>
+            </CardGrid>
 
             {/* 건강 개선 현황 */}
             <div className="bg-white p-6 rounded-lg border border-gray-200">

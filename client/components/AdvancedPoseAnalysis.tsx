@@ -71,6 +71,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as tf from '@tensorflow/tfjs';
@@ -113,7 +114,7 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
       try {
         // WebGL 백엔드 사용 (GPU 가속)
         await tf.setBackend('webgl');
-        console.log('TensorFlow.js WebGL 백엔드 초기화 완료');
+        logger.info('TensorFlow.js WebGL 백엔드 초기화 완료');
         
         // PoseNet 모델 로드
         const posenetModel = await createDetector(
@@ -129,16 +130,16 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
         
         setModel(posenetModel);
         setIsInitialized(true);
-        console.log('PoseNet 모델 로드 완료');
+        logger.info('PoseNet 모델 로드 완료');
       } catch (error) {
-        console.error('TensorFlow.js 초기화 실패:', error);
+        logger.error('TensorFlow.js 초기화 실패:', error);
         // CPU 백엔드로 폴백
         try {
           await tf.setBackend('cpu');
-          console.log('TensorFlow.js CPU 백엔드로 폴백');
+          logger.info('TensorFlow.js CPU 백엔드로 폴백');
           setIsInitialized(true);
         } catch (fallbackError) {
-          console.error('CPU 백엔드도 실패:', fallbackError);
+          logger.error('CPU 백엔드도 실패:', fallbackError);
         }
       }
     };
@@ -162,7 +163,7 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
         videoRef.current.play();
       }
     } catch (error) {
-      console.error('카메라 접근 실패:', error);
+      logger.error('카메라 접근 실패:', error);
     }
   }, []);
 
@@ -194,7 +195,7 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
         onAnalysisComplete(analysis);
       }
     } catch (error) {
-      console.error('자세 분석 실패:', error);
+      logger.error('자세 분석 실패:', error);
     }
   }, [model, swimmingStyle, onAnalysisComplete]);
 
@@ -364,7 +365,7 @@ const AdvancedPoseAnalysis: React.FC<AdvancedPoseAnalysisProps> = ({
           await analyzePose(model);
           animationId = requestAnimationFrame(analyzeLoop);
         } catch (error) {
-          console.error('분석 루프 오류:', error);
+          logger.error('분석 루프 오류:', error);
         }
       }
     };

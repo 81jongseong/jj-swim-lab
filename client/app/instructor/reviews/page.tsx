@@ -13,6 +13,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
+import { LoadingState, ErrorState, PageHeader, CardGrid } from '@/components/common';
+import { Button } from '@/components/ui';
 
 export default function InstructorReviewsPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -47,7 +50,7 @@ export default function InstructorReviewsPage() {
       const result = await response.json();
       setItems(result.items || []);
     } catch (err: any) {
-      console.error('리뷰 목록 조회 실패:', err);
+      logger.error('리뷰 목록 조회 실패:', err);
       setError(err.message || '리뷰 목록을 불러올 수 없습니다.');
       setItems([]);
     } finally {
@@ -101,7 +104,7 @@ export default function InstructorReviewsPage() {
       alert('리뷰가 완료되었습니다.');
       load();
     } catch (err: any) {
-      console.error('리뷰 처리 실패:', err);
+      logger.error('리뷰 처리 실패:', err);
       alert(err.message || '리뷰 처리에 실패했습니다.');
     }
   };
@@ -109,7 +112,7 @@ export default function InstructorReviewsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-5xl mx-auto p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">리뷰 대기 목록</h1>
+        <PageHeader title="리뷰 대기 목록" />
         <div className="flex items-center gap-3">
           <label className="text-sm">상태</label>
           <select className="border rounded px-2 py-1" value={status} onChange={e=>setStatus(e.target.value as any)}>
@@ -122,18 +125,13 @@ export default function InstructorReviewsPage() {
             <option value="center">센터</option>
             <option value="public">공개</option>
           </select>
-          <button className="px-3 py-1 border rounded" onClick={load}>적용</button>
+          <Button size="sm" variant="outline" onClick={load}>적용</Button>
         </div>
         {loading && (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">로딩 중...</p>
-          </div>
+          <LoadingState message="로딩 중..." size="md" />
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">{error}</p>
-          </div>
+          <ErrorState message={error} onRetry={load} />
         )}
         {!loading && !error && items.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg shadow">
@@ -141,7 +139,7 @@ export default function InstructorReviewsPage() {
           </div>
         )}
         {!loading && !error && items.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardGrid cols={1} mdCols={2} gap={4}>
             {items.map((v) => (
               <div key={v._id} className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition-shadow space-y-3">
                 <div>
@@ -189,7 +187,7 @@ export default function InstructorReviewsPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardGrid>
         )}
       </div>
     </div>

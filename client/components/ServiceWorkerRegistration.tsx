@@ -6,6 +6,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useEffect } from 'react';
 
@@ -15,10 +16,10 @@ export default function ServiceWorkerRegistration() {
       // 서비스 워커 등록
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker registered successfully:', registration);
+          logger.info('Service Worker registered successfully:', registration);
         })
         .catch((error) => {
-          console.log('Service Worker registration failed:', error);
+          logger.info('Service Worker registration failed:', error);
         });
     }
   }, []);

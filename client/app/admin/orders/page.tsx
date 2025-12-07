@@ -96,6 +96,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../../utils/api';
 import withAuth from '../../../components/withAuth';
+import { LoadingState, ErrorState, PageHeader, ConfirmModal } from '@/components/common';
 
 interface OrderItem {
   _id: string;
@@ -120,6 +121,19 @@ function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   const load = async () => {
     setLoading(true);
@@ -200,10 +214,11 @@ function AdminOrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-single-line">📦 주문 관리</h1>
-          <p className="text-gray-600">JJ Swim Lab의 모든 주문을 쉽게 관리하세요</p>
-        </div>
+        <PageHeader
+          title="📦 주문 관리"
+          description="JJ Swim Lab의 모든 주문을 쉽게 관리하세요"
+          className="mb-8"
+        />
 
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -216,9 +231,12 @@ function AdminOrdersPage() {
           </div>
 
           {error && (
-            <div className="px-8 py-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-              <p className="font-medium">오류가 발생했습니다:</p>
-              <p>{error}</p>
+            <div className="px-8 py-4">
+              <ErrorState 
+                message={`오류가 발생했습니다: ${error}`}
+                onRetry={() => window.location.reload()}
+                retryText="새로고침"
+              />
             </div>
           )}
 
@@ -318,10 +336,17 @@ function AdminOrdersPage() {
                       
                       <button
                         onClick={async () => {
-                          if (!confirm('정말로 이 주문을 삭제하시겠습니까?')) return;
-                          const res = await apiClient.deleteShopOrder(order._id);
-                          if (res.error) alert(res.error);
-                          else load();
+                          setConfirmModal({
+                            isOpen: true,
+                            message: '정말로 이 주문을 삭제하시겠습니까?',
+                            variant: 'danger',
+                            onConfirm: async () => {
+                              const res = await apiClient.deleteShopOrder(order._id);
+                              if (res.error) alert(res.error);
+                              else load();
+                              setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                            }
+                          });
                         }}
                         className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                       >
@@ -376,6 +401,18 @@ function AdminOrdersPage() {
           </div>
         </div>
       </div>
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

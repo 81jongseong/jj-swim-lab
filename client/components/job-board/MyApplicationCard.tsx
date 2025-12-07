@@ -21,7 +21,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface MyApplicationCardProps {
   application: {

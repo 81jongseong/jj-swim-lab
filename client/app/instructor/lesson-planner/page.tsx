@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Calendar, Clock, Users, Target, Plus, Edit, Trash2, Eye, FileText, Sparkles } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface LessonPlan {
   _id: string;
@@ -82,7 +84,7 @@ function LessonPlanner() {
         }
       }
     } catch (error) {
-      console.error('템플릿 로드 실패:', error);
+      logger.error('템플릿 로드 실패:', error);
     }
   };
 
@@ -177,7 +179,7 @@ function LessonPlanner() {
       ];
       setLessonPlans(tempPlans);
     } catch (error) {
-      console.error('수업 계획 로드 실패:', error);
+      logger.error('수업 계획 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -213,8 +215,7 @@ function LessonPlanner() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">수업 계획을 불러오는 중...</span>
+        <LoadingState message="수업 계획을 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -223,10 +224,10 @@ function LessonPlanner() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">수업 계획 관리</h1>
-          <p className="text-gray-600">체계적이고 효과적인 수업 계획을 작성하고 관리하세요</p>
-        </div>
+        <PageHeader
+          title="수업 계획 관리"
+          description="체계적이고 효과적인 수업 계획을 작성하고 관리하세요"
+        />
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -533,7 +534,7 @@ function LessonPlanner() {
                     setSelectedTemplate(null);
                     alert('템플릿을 기반으로 강습 계획서가 생성되었습니다. 내용을 확인하고 수정해주세요.');
                   } catch (error) {
-                    console.error('템플릿 적용 실패:', error);
+                    logger.error('템플릿 적용 실패:', error);
                     alert('템플릿 적용 중 오류가 발생했습니다.');
                   }
                 }}

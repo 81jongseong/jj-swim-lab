@@ -18,6 +18,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,7 @@ import { Calendar, List, Plus, Clock, Users, Settings, UserPlus } from 'lucide-r
 import ScheduleCalendar from '@/components/center-admin/ScheduleCalendar';
 import ScheduleModal from '@/components/center-admin/ScheduleModal';
 import ExternalPersonalLessonRequestModal from '@/components/center-admin/ExternalPersonalLessonRequestModal';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 interface ScheduleItem {
   _id: string;
@@ -66,6 +68,7 @@ function CenterScheduleManagement() {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [centerSchedule, setCenterSchedule] = useState<CenterSchedule | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 권한 확인 - 센터 관리자 또는 외부 회원(학생) 모두 접근 가능
   const isCenterAdmin = user && (
@@ -88,10 +91,23 @@ function CenterScheduleManagement() {
   const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 🔍 디버깅: 컴포넌트 렌더링 확인
-  console.log('🚀🚀🚀 센터 운영 스케줄 설정 페이지 렌더링 시작! 🚀🚀🚀');
-  console.log('🔍 CenterScheduleManagement 렌더링:', {
+  logger.info('🚀🚀🚀 센터 운영 스케줄 설정 페이지 렌더링 시작! 🚀🚀🚀');
+  logger.info('🔍 CenterScheduleManagement 렌더링:', {
     user: user ? '로그인됨' : '로그인 안됨',
     loading,
     viewMode,
@@ -104,19 +120,20 @@ function CenterScheduleManagement() {
   });
 
   useEffect(() => {
-    console.log('🔍 CenterScheduleManagement useEffect 실행:', { user: !!user });
+    logger.info('🔍 CenterScheduleManagement useEffect 실행:', { user: !!user });
     if (user) {
-      console.log('🔍 사용자 로그인됨 - 데이터 로딩 시작');
+      logger.info('🔍 사용자 로그인됨 - 데이터 로딩 시작');
       loadSchedules();
       loadCenterSchedule();
     } else {
-      console.log('❌ 사용자 로그인 안됨');
+      logger.info('❌ 사용자 로그인 안됨');
     }
   }, [user]);
 
   const loadSchedules = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/center-admin/schedules');
       const data = await response.json();
       
@@ -124,7 +141,7 @@ function CenterScheduleManagement() {
         setSchedules(data.data);
       } else {
         // 테스트용 임시 데이터
-        console.log('⚠️ API에서 데이터를 가져올 수 없어 임시 데이터를 사용합니다.');
+        logger.info('⚠️ API에서 데이터를 가져올 수 없어 임시 데이터를 사용합니다.');
         const tempSchedules: ScheduleItem[] = [
           {
             _id: '1',
@@ -158,8 +175,9 @@ function CenterScheduleManagement() {
         ];
         setSchedules(tempSchedules);
       }
-    } catch (error) {
-      console.error('스케줄 데이터 로드 실패:', error);
+    } catch (err: any) {
+      logger.error('스케줄 데이터 로드 실패:', err);
+      setError(err.message || '스케줄 데이터를 불러오는데 실패했습니다.');
       // 에러 시에도 테스트 데이터 사용
       const tempSchedules: ScheduleItem[] = [
         {
@@ -192,7 +210,7 @@ function CenterScheduleManagement() {
         setCenterSchedule(data.data);
       }
     } catch (error) {
-      console.error('센터 스케줄 데이터 로드 실패:', error);
+      logger.error('센터 스케줄 데이터 로드 실패:', error);
     }
   };
 
@@ -225,26 +243,31 @@ function CenterScheduleManagement() {
         setEditingSchedule(null);
       }
     } catch (error) {
-      console.error('스케줄 저장 실패:', error);
+      logger.error('스케줄 저장 실패:', error);
     }
   };
 
   const handleDeleteSchedule = async (scheduleId: string) => {
-    if (!confirm('정말로 이 스케줄을 삭제하시겠습니까?')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말로 이 스케줄을 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/center-admin/schedules/${scheduleId}`, {
+            method: 'DELETE'
+          });
 
-    try {
-      const response = await fetch(`/api/center-admin/schedules/${scheduleId}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        await loadSchedules();
+          if (response.ok) {
+            await loadSchedules();
+          }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } catch (error) {
+          logger.error('스케줄 삭제 실패:', error);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
       }
-    } catch (error) {
-      console.error('스케줄 삭제 실패:', error);
-    }
+    });
   };
 
   // ⭐ 외부 회원 개인레슨 요청 처리
@@ -273,7 +296,7 @@ function CenterScheduleManagement() {
         alert(result.message || '개인레슨 요청에 실패했습니다.');
       }
     } catch (error) {
-      console.error('외부 회원 개인레슨 요청 실패:', error);
+      logger.error('외부 회원 개인레슨 요청 실패:', error);
       alert('개인레슨 요청 중 오류가 발생했습니다.');
     }
   };
@@ -284,34 +307,39 @@ function CenterScheduleManagement() {
     return typeMatch && statusMatch;
   });
 
-  if (loading) {
-    console.log('⏳ 센터 운영 스케줄 설정 페이지 로딩 중...');
+  if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">센터 운영 스케줄 설정 페이지 로딩 중...</p>
-        </div>
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadSchedules();
+          }}
+          retryText="다시 시도"
+        />
       </div>
     );
   }
 
-  console.log('🎯 센터 운영 스케줄 설정 페이지 렌더링 완료!');
+  if (loading) {
+    logger.info('⏳ 센터 운영 스케줄 설정 페이지 로딩 중...');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingState message="센터 운영 스케줄 설정 페이지 로딩 중..." size="md" />
+      </div>
+    );
+  }
+
+  logger.info('🎯 센터 운영 스케줄 설정 페이지 렌더링 완료!');
   
   return (
     <div className="container mx-auto p-6">
       {/* 페이지 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              센터 운영 스케줄 관리 📅
-            </h1>
-            <p className="text-gray-600">센터 운영 시간, 강사 스케줄, 단체 수업을 통합 관리하세요</p>
-            <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
-              ✅ 센터 운영 스케줄 설정 페이지가 로드되었습니다!
-            </div>
-          </div>
+      <PageHeader
+        title="센터 운영 스케줄 관리 📅"
+        description="센터 운영 시간, 강사 스케줄, 단체 수업을 통합 관리하세요"
+        actions={
           <div className="flex items-center space-x-3">
             {isExternalMember && (
               <button
@@ -332,7 +360,10 @@ function CenterScheduleManagement() {
               </button>
             )}
           </div>
-        </div>
+        }
+      />
+      <div className="mt-2 mb-4 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-800">
+        ✅ 센터 운영 스케줄 설정 페이지가 로드되었습니다!
       </div>
 
       {/* 뷰 모드 선택 */}
@@ -341,7 +372,7 @@ function CenterScheduleManagement() {
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => {
-                console.log('🔍 캘린더 뷰 버튼 클릭됨');
+                logger.info('🔍 캘린더 뷰 버튼 클릭됨');
                 setViewMode('calendar');
               }}
               className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -355,7 +386,7 @@ function CenterScheduleManagement() {
             </button>
             <button
               onClick={() => {
-                console.log('🔍 목록 뷰 버튼 클릭됨');
+                logger.info('🔍 목록 뷰 버튼 클릭됨');
                 setViewMode('list');
               }}
               className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -467,7 +498,7 @@ function CenterScheduleManagement() {
 
       {/* 캘린더 뷰 */}
       {(() => {
-        console.log('🔍 캘린더 뷰 렌더링 체크:', {
+        logger.info('🔍 캘린더 뷰 렌더링 체크:', {
           viewMode,
           isCalendarMode: viewMode === 'calendar',
           loading,
@@ -475,7 +506,7 @@ function CenterScheduleManagement() {
         });
         
         if (viewMode === 'calendar') {
-          console.log('✅ 캘린더 뷰 조건 만족 - 렌더링 시작');
+          logger.info('✅ 캘린더 뷰 조건 만족 - 렌더링 시작');
           return (
             <div className="bg-white rounded-lg shadow">
               <div className="p-6">
@@ -492,7 +523,7 @@ function CenterScheduleManagement() {
                   schedules={filteredSchedules}
                   onScheduleClick={handleEditSchedule}
                   onAddSchedule={(date, time) => {
-                    console.log('📅 새 스케줄 추가 요청:', { date, time });
+                    logger.info('📅 새 스케줄 추가 요청:', { date, time });
                     setEditingSchedule(null);
                     setSelectedDate(date);
                     setShowScheduleModal(true);
@@ -504,7 +535,7 @@ function CenterScheduleManagement() {
             </div>
           );
         } else {
-          console.log('❌ 캘린더 뷰 조건 불만족 - 뷰 모드:', viewMode);
+          logger.info('❌ 캘린더 뷰 조건 불만족 - 뷰 모드:', viewMode);
           return null;
         }
       })()}
@@ -598,6 +629,18 @@ function CenterScheduleManagement() {
           onSubmit={handleExternalRequest}
         />
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

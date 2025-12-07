@@ -2,6 +2,9 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
+import { Button, Progress } from '@/components/ui';
+import { ErrorState, PageHeader } from '@/components/common';
 
 interface UploadStatus {
   status: 'idle' | 'uploading' | 'processing' | 'completed' | 'error';
@@ -94,7 +97,7 @@ const VideoUploadPage: React.FC = () => {
       }
 
     } catch (error) {
-      console.error('업로드 오류:', error);
+      logger.error('업로드 오류:', error);
       setUploadStatus({
         status: 'error',
         progress: 0,
@@ -156,7 +159,7 @@ const VideoUploadPage: React.FC = () => {
           throw new Error(result.message || '상태 조회 실패');
         }
       } catch (error) {
-        console.error('상태 조회 오류:', error);
+        logger.error('상태 조회 오류:', error);
         setUploadStatus({
           status: 'error',
           progress: 0,
@@ -336,12 +339,13 @@ const VideoUploadPage: React.FC = () => {
                   )}
                 </div>
                 
-                <button
+                <Button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  variant="primary"
+                  size="md"
                 >
                   동영상 선택
-                </button>
+                </Button>
               </div>
             )}
 
@@ -351,11 +355,8 @@ const VideoUploadPage: React.FC = () => {
                 <h3 className="text-2xl font-semibold text-white mb-2">
                   업로드 중...
                 </h3>
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadStatus.progress}%` }}
-                  ></div>
+                <div className="w-full mb-4">
+                  <Progress value={uploadStatus.progress} className="h-2 bg-gray-700 [&>div]:bg-blue-500" />
                 </div>
                 <p className="text-blue-200">{uploadStatus.message}</p>
               </div>
@@ -367,11 +368,8 @@ const VideoUploadPage: React.FC = () => {
                 <h3 className="text-2xl font-semibold text-white mb-2">
                   AI가 3D 애니메이션을 생성하고 있습니다
                 </h3>
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-                  <div 
-                    className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadStatus.progress}%` }}
-                  ></div>
+                <div className="w-full mb-4">
+                  <Progress value={uploadStatus.progress} className="h-2 bg-gray-700 [&>div]:bg-purple-500" />
                 </div>
                 <p className="text-purple-200">{uploadStatus.message}</p>
                 <p className="text-sm text-gray-300 mt-2">
@@ -387,39 +385,31 @@ const VideoUploadPage: React.FC = () => {
                   생성 완료!
                 </h3>
                 <p className="text-green-200 mb-4">{uploadStatus.message}</p>
-                <div className="space-x-4">
-                  <button
+                <div className="flex gap-4">
+                  <Button
                     onClick={goToViewer}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    variant="primary"
+                    className="bg-green-600 hover:bg-green-700"
                   >
                     🎬 3D 뷰어에서 보기
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={resetUpload}
-                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    variant="secondary"
                   >
                     🔄 새로 업로드
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {uploadStatus.status === 'error' && (
-              <div>
-                <div className="text-6xl mb-4">❌</div>
-                <h3 className="text-2xl font-semibold text-white mb-2">
-                  오류 발생
-                </h3>
-                <p className="text-red-200 mb-2">{uploadStatus.message}</p>
-                {uploadStatus.error && (
-                  <p className="text-sm text-red-300 mb-4">{uploadStatus.error}</p>
-                )}
-                <button
-                  onClick={resetUpload}
-                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  다시 시도
-                </button>
+              <div className="flex flex-col items-center justify-center">
+                <ErrorState
+                  message={`${uploadStatus.message}${uploadStatus.error ? `\n${uploadStatus.error}` : ''}`}
+                  onRetry={resetUpload}
+                  retryText="다시 시도"
+                />
               </div>
             )}
           </div>
@@ -455,3 +445,4 @@ const VideoUploadPage: React.FC = () => {
 };
 
 export default VideoUploadPage;
+

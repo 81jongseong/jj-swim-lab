@@ -1,34 +1,9 @@
-/**
- * 🏥 JJ Swim Lab - VWorld API 헬스체크
- * 
- * 📋 **API 목적**
- * - VWorld WMTS 타일 서비스 상태 확인
- * - VWorld Geocoder API 상태 확인
- * - 키 만료/권한/쿼터 문제 사전 감지
- * 
- * 🔄 **주요 기능**
- * - WMTS 타일 1장 요청 (샘플)
- * - Geocoder 1건 요청 (샘플)
- * - HTTP 상태 코드 확인
- * - 성공/실패 응답
- * 
- * 🗄️ **데이터 연동**
- * - VWorld WMTS API
- * - VWorld Geocoder 2.0 API
- * - 환경변수 (API 키)
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 하루 1회 정도만 호출 권장 (쿼터 소모 최소화)
- * 2. Geocoder는 일 40,000건 제한
- * 3. 헬스체크는 최소 샘플만 사용
- * 4. 캐싱 금지 (no-store)
- */
-
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    console.log('🏥 VWorld API 헬스체크 시작...');
+    logger.info('🏥 VWorld API 헬스체크 시작...');
 
     const clientKey = process.env.NEXT_PUBLIC_VWORLD_KEY;
     const serverKey = process.env.VWORLD_SERVER_KEY;
@@ -87,12 +62,12 @@ export async function GET() {
       : 'TIMEOUT_OR_ERROR';
 
     // 로깅
-    console.log(`🗺️ WMTS 타일: ${tileStatus}`);
-    console.log(`🌍 Geocoder: ${geocoderStatus}`);
+    logger.info(`🗺️ WMTS 타일: ${tileStatus}`);
+    logger.info(`🌍 Geocoder: ${geocoderStatus}`);
 
     // 만료일 정보
     const expiresAtDate = process.env.NEXT_PUBLIC_VWORLD_EXPIRES_AT;
-    let daysLeft = null;
+    let daysLeft: number | null = null;
 
     if (expiresAtDate) {
       const diffTime = new Date(expiresAtDate).getTime() - Date.now();
@@ -106,7 +81,7 @@ export async function GET() {
       expiresAt: expiresAtDate,
       daysLeft,
       timestamp: new Date().toISOString(),
-      recommendations: []
+      recommendations: [] as string[]
     };
 
     // 문제 진단 및 권장사항
@@ -137,7 +112,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('❌ VWorld 헬스체크 오류:', error);
+    logger.error('❌ VWorld 헬스체크 오류:', error);
 
     return NextResponse.json({
       success: false,

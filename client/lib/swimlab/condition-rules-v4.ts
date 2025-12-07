@@ -21,6 +21,7 @@
 
 import { EvidenceKey } from '@/types/evidence';
 import { allJointConditions } from '@/swim-training-engine/src/data/jj-swim-lab-joint-guidance';
+import { logger } from '@/lib/logger';
 
 type Zone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
 type Stroke = 'freestyle' | 'backstroke' | 'breaststroke' | 'butterfly' | 'elementary_backstroke' | 'sidestroke';
@@ -372,7 +373,7 @@ export function applyDayCondition(
     const paceIncreaseDisplay = Math.round(cssPct * 100);
     explanation = `🏥 건강 상태 조정: ${intensityPctDisplay}% 강도 → 페이스 +${paceIncreaseDisplay}%, 휴식 증가. 과학적 운동 처방 (ACSM/WHO 기준)`;
     
-    console.log('🏥 건강 상태 기반 페이스 조절:', {
+    logger.debug('건강 상태 기반 페이스 조절', {
       intensityPercent,
       cssPct,
       paceMultiplier: (1 + cssPct).toFixed(2) + 'x',
@@ -560,4 +561,5 @@ export function aggregateConditionRules(
   
   return aggregated;
 }
+
 

@@ -34,6 +34,7 @@ import { makeExplainableSet, type ExplainableSetItem } from '@/lib/swimlab/engin
 import { aggregateConditionRules, type ConditionRuleResult } from '@/lib/swimlab/condition-rules-v4';
 import { TRAINING_METHODS } from '@/src/swimlab/data/trainingMethods';
 import { DRILLS } from '@/src/swimlab/data/drills';
+import { logger } from '@/lib/logger';
 
 type Stroke = 'freestyle' | 'backstroke' | 'breaststroke' | 'butterfly' | 'elementary_backstroke' | 'sidestroke';
 type Zone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5';
@@ -422,20 +423,20 @@ function selectTrainingMethod(
   
   // 📚 이력 기반 회피 로직: 최근 3주간 사용한 훈련법 제외
   if (weekHistory && weekHistory.length > 0) {
-    console.log('📚 훈련법 선택 - 이력:', weekHistory, '후보:', candidates);
+    logger.debug('훈련법 선택 - 이력', { weekHistory, candidates });
     const available = candidates.filter(id => !weekHistory.includes(id));
     if (available.length > 0) {
       candidates = available;
-      console.log('✅ 이력 회피 후 후보:', candidates);
+      logger.debug('이력 회피 후 후보', candidates);
     } else {
-      console.log('⚠️ 모든 후보가 이력에 있음, 그대로 사용');
+      logger.warn('모든 후보가 이력에 있음, 그대로 사용');
     }
     // 모든 후보가 이력에 있으면 그대로 사용 (다양성보다 목적성 우선)
   }
   
   // 첫 번째 후보 선택
   let selectedId = candidates[0];
-  console.log('🎯 선택된 훈련법:', selectedId, '테마:', theme, '목표:', goal);
+  logger.debug('선택된 훈련법', { selectedId, theme, goal });
   
   // 후보가 없으면 테마의 기본값 사용
   if (!selectedId) {
@@ -756,7 +757,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
   // 결과: 같은 거리, 같은 시간, 낮은 강도
   
   if (i.intensityPercent && i.intensityPercent < 1.0) {
-    console.log(`🏥 건강 상태 기반 과학적 조절: ${Math.round(i.intensityPercent * 100)}% 강도 → 거리 유지, 페이스 ${Math.round((1/i.intensityPercent) * 100)}% (느리게)`);
+    logger.debug(`건강 상태 기반 과학적 조절: ${Math.round(i.intensityPercent * 100)}% 강도 → 거리 유지, 페이스 ${Math.round((1/i.intensityPercent) * 100)}% (느리게)`);
   }
   
   // 최종 조정 계수 (완료율 + 생리학적 지표만 적용)
@@ -771,7 +772,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
   const out: DayPlan[] = [];
   
   // 디버그 로그
-  console.log(`🧬 생리학적 지표 기반 개선 한계:`, {
+  logger.debug('생리학적 지표 기반 개선 한계', {
     potential: improvementPotential.potential,
     maxImprovement: improvementPotential.maxImprovement + '%',
     recommendedFocus: improvementPotential.recommendedFocus,
@@ -779,7 +780,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
   });
   
   if (i.previousWeekCompletionRate !== undefined) {
-    console.log(`🎯 완료율 기반 강도 조절:`, {
+    logger.debug('완료율 기반 강도 조절', {
       completionRate: i.previousWeekCompletionRate,
       mode: i.intensityAdjustmentMode || 'auto',
       intensityAdjustment: intensityAdjustment,
@@ -893,7 +894,7 @@ export function generateWeeklyPlan(i: Input): WeeklyPlan {
   };
   
   const dayThemes = getWeeklyThemes(i.goal, i.days.length);
-  console.log('📅 주간 테마 설정:', {
+  logger.debug('주간 테마 설정', {
     goal: i.goal,
     days: i.days.length,
     themes: dayThemes
@@ -1323,7 +1324,7 @@ function getEffectiveCSS(css100Record: Record<string, number>, stroke: Stroke, l
     // 최적 거리 CSS를 100m 기준으로 변환
     if (optimalDistance !== 100) {
       const css100 = convertDistanceTime(css100Record[optimalKey], optimalDistance, 100);
-      console.log(`📏 ${strokeKey} ${optimalDistance}m CSS(${css100Record[optimalKey]}초) → 100m(${css100.toFixed(1)}초) 변환 [목표: ${goal}]`);
+      logger.debug(`📏 ${strokeKey} ${optimalDistance}m CSS(${css100Record[optimalKey]}초) → 100m(${css100.toFixed(1)}초) 변환 [목표: ${goal}]`);
       return Math.round(css100);
     }
     return css100Record[optimalKey];
@@ -1333,14 +1334,14 @@ function getEffectiveCSS(css100Record: Record<string, number>, stroke: Stroke, l
   // 400m → 100m
   if (css100Record[`${strokeKey}_400m`] && css100Record[`${strokeKey}_400m`] > 0) {
     const css100 = convertDistanceTime(css100Record[`${strokeKey}_400m`], 400, 100);
-    console.log(`📏 ${strokeKey} 400m(${css100Record[`${strokeKey}_400m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
+    logger.debug(`📏 ${strokeKey} 400m(${css100Record[`${strokeKey}_400m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
     return Math.round(css100);
   }
   
   // 200m → 100m
   if (css100Record[`${strokeKey}_200m`] && css100Record[`${strokeKey}_200m`] > 0) {
     const css100 = convertDistanceTime(css100Record[`${strokeKey}_200m`], 200, 100);
-    console.log(`📏 ${strokeKey} 200m(${css100Record[`${strokeKey}_200m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
+    logger.debug(`📏 ${strokeKey} 200m(${css100Record[`${strokeKey}_200m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
     return Math.round(css100);
   }
   
@@ -1352,14 +1353,14 @@ function getEffectiveCSS(css100Record: Record<string, number>, stroke: Stroke, l
   // 50m → 100m
   if (css100Record[`${strokeKey}_50m`] && css100Record[`${strokeKey}_50m`] > 0) {
     const css100 = convertDistanceTime(css100Record[`${strokeKey}_50m`], 50, 100);
-    console.log(`📏 ${strokeKey} 50m(${css100Record[`${strokeKey}_50m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
+    logger.debug(`📏 ${strokeKey} 50m(${css100Record[`${strokeKey}_50m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
     return Math.round(css100);
   }
   
   // 25m → 100m
   if (css100Record[`${strokeKey}_25m`] && css100Record[`${strokeKey}_25m`] > 0) {
     const css100 = convertDistanceTime(css100Record[`${strokeKey}_25m`], 25, 100);
-    console.log(`📏 ${strokeKey} 25m(${css100Record[`${strokeKey}_25m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
+    logger.debug(`📏 ${strokeKey} 25m(${css100Record[`${strokeKey}_25m`]}초) → 100m(${css100.toFixed(1)}초) 변환`);
     return Math.round(css100);
   }
   
@@ -1367,7 +1368,7 @@ function getEffectiveCSS(css100Record: Record<string, number>, stroke: Stroke, l
   const memberLevel = level || 'intermediate';
   const estimatedCSS = LEVEL_ESTIMATED_CSS[memberLevel] || LEVEL_ESTIMATED_CSS['intermediate'];
   const finalCSS = estimatedCSS[strokeKey] || 90;
-  console.log(`📊 ${strokeKey} CSS 없음 → 레벨(${memberLevel}) 기반 추정: ${finalCSS}초/100m`);
+  logger.debug(`📊 ${strokeKey} CSS 없음 → 레벨(${memberLevel}) 기반 추정: ${finalCSS}초/100m`);
   return finalCSS;
 }
 
@@ -1469,7 +1470,7 @@ function buildDayPlan(opts: {
     
     // 사용 가능한 영법이 없으면 허용 영법 중 첫 번째 사용 (안전 장치)
     if (availableStrokes.length === 0) {
-      console.warn('⚠️ 모든 영법이 회피됨, 허용 영법 중 첫 번째 사용:', finalAllowedStrokes[0]);
+      logger.warn('모든 영법이 회피됨, 허용 영법 중 첫 번째 사용', finalAllowedStrokes[0]);
       return finalAllowedStrokes[0];
     }
     
@@ -1563,7 +1564,7 @@ function buildDayPlan(opts: {
     // 실제 CSS 값 가져오기 (목표별 최적 거리 자동 선택)
     const cssForStroke = getEffectiveCSS(opts.css100, s1, memberLevel, opts.goal);
     
-    console.log('🏊 드릴 섹션 영법:', {
+    logger.debug('드릴 섹션 영법', {
       selectedStroke: s1,
       pullDrill: drillForPull.name,
       kickDrill: drillForKick.name,
@@ -1704,7 +1705,7 @@ function buildDayPlan(opts: {
         // 훈련법별 최소/최적/최대 반복 횟수 적용
         nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedReps));
         
-        console.log(`🔬 ${methodData.title} 반복 횟수:`, {
+        logger.debug(`${methodData.title} 반복 횟수`, {
           calculatedReps,
           minReps: meta.minReps,
           optimalReps: meta.optimalReps,
@@ -1776,7 +1777,7 @@ function buildDayPlan(opts: {
         const calculatedRepsEnd = Math.round(freeM / distance);
         nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedRepsEnd));
         
-        console.log(`🔬 ${methodDataEnd.title} 반복 횟수:`, {
+        logger.debug(`${methodDataEnd.title} 반복 횟수`, {
           calculatedReps: calculatedRepsEnd,
           minReps: meta.minReps,
           optimalReps: meta.optimalReps,
@@ -1847,7 +1848,7 @@ function buildDayPlan(opts: {
         const calculatedRepsHi = Math.round(freeM / distance);
         nF = Math.max(meta.minReps, Math.min(meta.maxReps, calculatedRepsHi));
         
-        console.log(`🔬 ${methodDataHi.title} 반복 횟수:`, {
+        logger.debug(`${methodDataHi.title} 반복 횟수`, {
           calculatedReps: calculatedRepsHi,
           minReps: meta.minReps,
           optimalReps: meta.optimalReps,
@@ -2074,7 +2075,7 @@ function applyToSets(
     
     // 첫 세트에서만 디버깅 로그
     if (out.length === 0) {
-      console.log('🎯 페이스 조절 적용:', {
+      logger.debug('페이스 조절 적용', {
         stroke: s.stroke,
         baseCss: baseCss + '초/100m',
         cssPct: (mod.cssPct * 100).toFixed(1) + '%',
@@ -2113,7 +2114,7 @@ function finalizePlan(
 
   let total = sets.reduce((s, x) => s + x.meters, 0);
   
-  console.log('📊 finalizePlan 총거리 계산:', {
+  logger.debug('finalizePlan 총거리 계산', {
     engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전
     targetM,
     calculatedTotal: total,
@@ -2221,7 +2222,7 @@ function finalizePlan(
     });
   });
 
-  console.log('⏱️ 시간 계산 상세:', {
+  logger.debug('시간 계산 상세', {
     engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전
     targetMinutes,
     estimatedMinutes: estimatedMinutes.toFixed(1),
@@ -2230,9 +2231,9 @@ function finalizePlan(
   });
   
   // 🔍 각 세트별 상세 정보 출력
-  console.log('🔍 세트별 시간 계산 상세:');
+  logger.debug('세트별 시간 계산 상세');
   timeDetails.forEach((detail, idx) => {
-    console.log(`  ${idx + 1}. ${detail.desc}`, {
+    logger.debug(`  ${idx + 1}. ${detail.desc}`, {
       meters: detail.meters,
       reps: detail.reps,
       distPerRep: detail.distPerRep,
@@ -2340,7 +2341,7 @@ function finalizePlan(
         }
       }
       
-      console.log('⏰ 시간 초과 조절:', {
+      logger.debug('시간 초과 조절', {
         excessMinutes: diff.toFixed(1),
         adjustments,
         remainingExcess: remainingMinutes.toFixed(1)
@@ -2505,7 +2506,7 @@ function finalizePlan(
         }
       }
       
-      console.log('⏰ 시간 부족 조절:', {
+      logger.debug('시간 부족 조절', {
         shortfall: Math.abs(diff).toFixed(1),
         adjustments,
         remainingShortfall: remainingMinutes.toFixed(1)
@@ -2541,7 +2542,7 @@ function finalizePlan(
   // 최종 시간: 계산된 예상 시간 사용 (정직하게 표시)
   const finalDuration = Math.round(estimatedMinutes);
 
-  console.log('⏰ finalizePlan 최종 결과:', {
+  logger.debug('finalizePlan 최종 결과', {
     engineVersion: 'v34-reps-parse-fix', // 🔖 엔진 버전 표시
     totalMeters: total,
     estimatedMinutes: estimatedMinutes.toFixed(1),
@@ -2603,4 +2604,5 @@ const getStrokeName = (stroke: Stroke): string => {
   };
   return names[stroke] || stroke;
 };
+
 

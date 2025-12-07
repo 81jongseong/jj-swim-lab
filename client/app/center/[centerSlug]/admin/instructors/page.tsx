@@ -10,6 +10,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 /* eslint-disable no-console */
 
 import React, { useState, useEffect } from 'react';
@@ -22,6 +23,7 @@ import InstructorEditModal from '@/components/center-admin/InstructorEditModal';
 import InstructorStudentManagement from '@/components/center-admin/InstructorStudentManagement';
 import PTLessonProgress from '@/components/center-admin/PTLessonProgress';
 import apiClient from '@/utils/api';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 const DEBUG = false;
 
@@ -75,6 +77,7 @@ function CenterInstructorsManagement() {
   const { user } = useAuth();
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 권한 확인 - 페이지 렌더링 전에 체크
   // center@swim.com 계정도 센터 관리자로 인식
@@ -98,6 +101,19 @@ function CenterInstructorsManagement() {
   const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [instructorStats, setInstructorStats] = useState<{[key: string]: any}>({});
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   useEffect(() => {
     if (user) {
@@ -114,28 +130,36 @@ function CenterInstructorsManagement() {
   const loadInstructors = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       // 현재 로그인한 사용자 정보 확인
-      if (DEBUG) console.log('🔍 현재 로그인한 사용자:', user);
-      if (DEBUG) console.log('🔍 사용자 센터 ID:', user?.centerId);
+      if (DEBUG) logger.info('🔍 현재 로그인한 사용자:', user);
+      if (DEBUG) logger.info('🔍 사용자 센터 ID:', user?.centerId);
       
       // 실제 API 연동
       const response = await apiClient.get('/api/center-admin/instructors');
-      if (DEBUG) console.log('📡 전체 응답:', response);
+      if (DEBUG) logger.info('📡 전체 응답:', response);
       
       // response = { success, message, data: { instructors, pagination } }
+      if ((response as any).error) {
+        setError((response as any).error);
+        setInstructors([]);
+        return;
+      }
+      
       if ((response as any).success) {
         const instructors = ((response as any).data?.instructors || [])
           .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || '', 'ko-KR')); // ⭐ 가나다순 정렬
-        if (DEBUG) console.log('📋 강사 배열 (가나다순):', instructors);
+        if (DEBUG) logger.info('📋 강사 배열 (가나다순):', instructors);
         setInstructors(instructors);
-        if (DEBUG) console.log('✅ 강사 데이터 로드 성공:', instructors.length, '명');
+        if (DEBUG) logger.info('✅ 강사 데이터 로드 성공:', instructors.length, '명');
         
         if (instructors.length === 0) {
-          if (DEBUG) console.warn('⚠️ 센터에 배정된 강사가 없습니다. 서버 로그를 확인하세요.');
+          if (DEBUG) logger.warn('⚠️ 센터에 배정된 강사가 없습니다. 서버 로그를 확인하세요.');
         }
       } else {
-        if (DEBUG) console.error('❌ API 호출 실패');
+        if (DEBUG) logger.error('❌ API 호출 실패');
+        setError('강사 목록을 불러오는데 실패했습니다.');
         setInstructors([]);
       }
       
@@ -275,8 +299,9 @@ function CenterInstructorsManagement() {
       ];
       setInstructors(tempInstructors);
       */
-    } catch (error) {
-      if (DEBUG) console.error('강사 목록 로드 실패:', error);
+    } catch (err: any) {
+      if (DEBUG) logger.error('강사 목록 로드 실패:', err);
+      setError(err.message || '강사 목록을 불러오는데 실패했습니다.');
       setInstructors([]);
     } finally {
       setIsLoading(false);
@@ -285,9 +310,9 @@ function CenterInstructorsManagement() {
 
   const loadInstructorStats = async () => {
     try {
-      if (DEBUG) console.log('📊 강사 통계 로드 시작...');
+      if (DEBUG) logger.info('📊 강사 통계 로드 시작...');
       const response = await apiClient.get('/api/center-admin/instructors/stats');
-      if (DEBUG) console.log('📊 강사 통계 API 응답:', response);
+      if (DEBUG) logger.info('📊 강사 통계 API 응답:', response);
       
       if (response.success && Array.isArray(response.data)) {
         const statsMap: {[key: string]: any} = {};
@@ -295,12 +320,12 @@ function CenterInstructorsManagement() {
           statsMap[stat.instructorId] = stat;
         });
         setInstructorStats(statsMap);
-        if (DEBUG) console.log('📊 강사 통계 로드 완료:', statsMap);
+        if (DEBUG) logger.info('📊 강사 통계 로드 완료:', statsMap);
       } else {
-        if (DEBUG) console.error('📊 강사 통계 API 실패:', response.message);
+        if (DEBUG) logger.error('📊 강사 통계 API 실패:', response.message);
       }
     } catch (error) {
-      if (DEBUG) console.error('강사 통계 로드 실패:', error);
+      if (DEBUG) logger.error('강사 통계 로드 실패:', error);
     }
   };
 
@@ -313,7 +338,7 @@ function CenterInstructorsManagement() {
     if (!selectedInstructor) return;
 
     try {
-      if (DEBUG) console.log('🔥 강사 정보 저장 시작:', {
+      if (DEBUG) logger.info('🔥 강사 정보 저장 시작:', {
         instructorId: selectedInstructor._id,
         instructorName: selectedInstructor.name,
         updatedData: updatedData
@@ -324,7 +349,7 @@ function CenterInstructorsManagement() {
         updatedData
       );
 
-      if (DEBUG) console.log('📡 서버 응답:', response);
+      if (DEBUG) logger.info('📡 서버 응답:', response);
 
       // apiClient는 response.data를 반환하므로 response.success 확인
       if ((response as any)?.success) {
@@ -346,8 +371,8 @@ function CenterInstructorsManagement() {
         throw new Error('응답 실패');
       }
     } catch (error: any) {
-      if (DEBUG) console.error('❌ 강사 정보 수정 실패:', error);
-      if (DEBUG) console.error('📋 에러 상세:', error.response?.data);
+      if (DEBUG) logger.error('❌ 강사 정보 수정 실패:', error);
+      if (DEBUG) logger.error('📋 에러 상세:', error.response?.data);
       
       // 에러 메시지 개선
       const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류';
@@ -356,9 +381,15 @@ function CenterInstructorsManagement() {
   };
 
   const handleDeleteInstructor = (instructorId: string) => {
-    if (confirm('정말 이 강사를 삭제하시겠습니까?')) {
-      setInstructors(prev => prev.filter(i => i._id !== instructorId));
-    }
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 이 강사를 삭제하시겠습니까?',
+      variant: 'danger',
+      onConfirm: () => {
+        setInstructors(prev => prev.filter(i => i._id !== instructorId));
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   const handleManageStudents = (instructorId: string) => {
@@ -382,7 +413,22 @@ function CenterInstructorsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            loadInstructors();
+          }}
+          retryText="다시 시도"
+        />
       </div>
     );
   }
@@ -390,12 +436,10 @@ function CenterInstructorsManagement() {
   return (
     <div className="container mx-auto p-6">
       {/* 페이지 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          센터 강사 관리 👨‍🏫
-        </h1>
-        <p className="text-gray-600">센터 소속 강사들을 관리하고 평가하세요</p>
-      </div>
+      <PageHeader
+        title="센터 강사 관리 👨‍🏫"
+        description="센터 소속 강사들을 관리하고 평가하세요"
+      />
 
       {/* 통계 카드 */}
       <InstructorStatsCards instructors={instructors} instructorStats={instructorStats} />
@@ -504,6 +548,17 @@ function CenterInstructorsManagement() {
         />
       )}
 
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

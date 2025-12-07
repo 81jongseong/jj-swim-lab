@@ -1,16 +1,11 @@
-/**
- * 강사 관리 페이지
- * 최고 관리자가 강사 정보, 성과, 스케줄을 종합적으로 관리하는 페이지
- * 연동 데이터: 강사 정보, 자격증, 급여, 스케줄, 성과 데이터
- * 연동 파일: useAuth.tsx, 강사 관련 API
- */
+'use client';
 
-"use client";
-
+import { logger } from '@/lib/logger';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui/button';
+import { CardGrid, LoadingState } from '@/components/common';
+import { Button } from '@/components/ui';
 import InstructorScheduleCard from '@/components/InstructorScheduleCard';
 
 interface Instructor {
@@ -85,7 +80,7 @@ export default function InstructorManagementPage() {
 
     try {
       // 실제 API 호출 (임시로 콘솔 로그)
-      console.log('강사 비활성화:', {
+      logger.info('강사 비활성화:', {
         instructorId: selectedInstructor.id,
         instructorName: selectedInstructor.name,
         reason: deactivationReason,
@@ -108,7 +103,7 @@ export default function InstructorManagementPage() {
       // loadInstructors();
       
     } catch (error) {
-      console.error('강사 비활성화 오류:', error);
+      logger.error('강사 비활성화 오류:', error);
       alert('강사 비활성화 중 오류가 발생했습니다.');
     }
   };
@@ -459,10 +454,7 @@ export default function InstructorManagementPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">강사 데이터를 불러오는 중...</p>
-          </div>
+          <LoadingState message="강사 데이터를 불러오는 중..." size="lg" />
         </div>
       </div>
     );
@@ -546,7 +538,7 @@ export default function InstructorManagementPage() {
                 
         {/* 탭 콘텐츠 */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <CardGrid gap={6} className="mb-8">
             <StatCard
               title="전체 강사"
               value={`${sampleInstructors.length}명`}
@@ -579,7 +571,7 @@ export default function InstructorManagementPage() {
               subtitle="전체 수강생"
               href="/admin/users"
             />
-                        </div>
+          </CardGrid>
         )}
 
             {activeTab === 'instructors' && (
@@ -1331,7 +1323,7 @@ export default function InstructorManagementPage() {
         {activeTab === 'performance' && (
               <div className="space-y-6">
             {/* 성과 요약 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardGrid gap={4}>
               <StatCard
                 title="총 강사 수"
                 value={`${filteredInstructors.length}명`}
@@ -1369,7 +1361,7 @@ export default function InstructorManagementPage() {
                 color="yellow"
                 subtitle="강사 평균"
               />
-                        </div>
+            </CardGrid>
                               
             {/* 강사별 성과 */}
             <div className="bg-white rounded-lg shadow p-6">

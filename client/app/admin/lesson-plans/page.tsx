@@ -6,11 +6,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { CardGrid, LoadingState, PageHeader, ErrorState, ConfirmModal } from '@/components/common';
+import { Button } from '@/components/ui';
 import TemplateCard from '@/components/TemplateCard';
 
 interface CurriculumStage {
@@ -59,6 +61,19 @@ export default function LessonPlansPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<LessonPlanTemplate | null>(null);
   
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
+
   const [newTemplate, setNewTemplate] = useState<LessonPlanTemplate>({
     templateName: '',
     description: '',
@@ -117,7 +132,7 @@ export default function LessonPlansPage() {
         }
       }
     } catch (error) {
-      console.error('템플릿 로드 오류:', error);
+      logger.error('템플릿 로드 오류:', error);
     } finally {
       setIsLoading(false);
     }
@@ -224,7 +239,7 @@ export default function LessonPlansPage() {
         alert('템플릿 저장에 실패했습니다.');
       }
     } catch (error) {
-      console.error('템플릿 저장 오류:', error);
+      logger.error('템플릿 저장 오류:', error);
       alert('템플릿 저장 중 오류가 발생했습니다.');
     }
   };
@@ -254,10 +269,7 @@ export default function LessonPlansPage() {
   if (loading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">템플릿을 불러오는 중...</p>
-        </div>
+        <LoadingState message="템플릿을 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -265,25 +277,22 @@ export default function LessonPlansPage() {
   if (!user || user.userType !== 'superAdmin') {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">접근 권한 없음</h1>
-          <p className="text-gray-600">최고관리자만 접근할 수 있습니다.</p>
-        </div>
+        <ErrorState 
+          message="접근 권한 없음: 최고관리자만 접근할 수 있습니다."
+        />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">📋 강습 계획 템플릿 관리</h1>
-        <p className="text-gray-600">
-          단계별 커리큘럼 템플릿을 생성하여 모든 센터에서 사용할 수 있도록 합니다
-        </p>
-      </div>
+      <PageHeader
+        title="📋 강습 계획 템플릿 관리"
+        description="단계별 커리큘럼 템플릿을 생성하여 모든 센터에서 사용할 수 있도록 합니다"
+      />
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <CardGrid gap={6} className="mb-6">
         <StatCard
           title="전체 템플릿"
           value={`${templates.length}개`}
@@ -319,7 +328,7 @@ export default function LessonPlansPage() {
           subtitle="센터에서 사용 가능"
           onClick={() => setFilters(prev => ({ ...prev, category: 'all', level: 'all', search: '' }))}
         />
-      </div>
+      </CardGrid>
 
       {/* 필터 및 검색 */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -415,9 +424,15 @@ export default function LessonPlansPage() {
               setShowCreateModal(true);
             }}
             onDelete={() => {
-              if (confirm(`"${template.templateName}" 템플릿을 삭제하시겠습니까?`)) {
-                // TODO: 삭제 API 호출
-              }
+              setConfirmModal({
+                isOpen: true,
+                message: `"${template.templateName}" 템플릿을 삭제하시겠습니까?`,
+                variant: 'danger',
+                onConfirm: () => {
+                  // TODO: 삭제 API 호출
+                  setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                }
+              });
             }}
             onView={() => {
               setEditingTemplate(template);
@@ -698,6 +713,18 @@ export default function LessonPlansPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

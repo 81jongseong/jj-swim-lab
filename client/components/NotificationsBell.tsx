@@ -66,6 +66,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React from 'react';
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -129,7 +130,7 @@ export default function NotificationsBell() {
       router.push('/job-board');
       setOpen(false);
     } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
+      logger.error('알림 읽음 처리 실패:', error);
     }
   };
 

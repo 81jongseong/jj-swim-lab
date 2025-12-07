@@ -6,8 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Users, CheckCircle, AlertCircle, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { logger } from '@/lib/logger';
 
 interface Member {
   _id: string;
@@ -70,8 +71,8 @@ export default function CourseMemberAssignmentModal({
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 회원 목록 API 응답:', data);
-        console.log('📊 API 응답 구조:', {
+        logger.info('📊 회원 목록 API 응답:', data);
+        logger.info('📊 API 응답 구조:', {
           success: data.success,
           message: data.message,
           dataKeys: Object.keys(data.data || {}),
@@ -80,8 +81,8 @@ export default function CourseMemberAssignmentModal({
         
         // API 응답에서 회원 목록 추출 - data.data가 배열
         const allMembers = Array.isArray(data.data) ? data.data : [];
-        console.log('📊 추출된 회원 목록:', allMembers);
-        console.log('📊 API 응답 구조:', {
+        logger.debug('추출된 회원 목록', allMembers);
+        logger.debug('API 응답 구조', {
           success: data.success,
           data: data.data,
           usersLength: allMembers.length
@@ -89,16 +90,18 @@ export default function CourseMemberAssignmentModal({
         
         // 만약 data.data가 배열이라면 직접 사용
         if (Array.isArray(data.data) && data.data.length > 0) {
-          console.log('📊 data.data가 배열입니다. 직접 사용합니다.');
+          logger.debug('data.data가 배열입니다. 직접 사용합니다.');
           const allMembersFromArray = data.data;
-          console.log('📊 배열에서 추출된 회원 목록:', allMembersFromArray);
+          logger.debug('배열에서 추출된 회원 목록', allMembersFromArray);
           
           // 첫 번째 회원의 모든 필드 확인
           if (allMembersFromArray.length > 0) {
-            console.log('🔍 첫 번째 회원의 모든 필드:', Object.keys(allMembersFromArray[0]));
-            console.log('🔍 첫 번째 회원의 studentInfo:', allMembersFromArray[0].studentInfo);
-            console.log('🔍 첫 번째 회원의 level 필드:', allMembersFromArray[0].level);
-            console.log('🔍 첫 번째 회원의 currentLevel 필드:', allMembersFromArray[0].currentLevel);
+            logger.debug('첫 번째 회원 정보', {
+              keys: Object.keys(allMembersFromArray[0]),
+              studentInfo: allMembersFromArray[0].studentInfo,
+              level: allMembersFromArray[0].level,
+              currentLevel: allMembersFromArray[0].currentLevel
+            });
           }
           
           // 학생 회원만 필터링하고 실제 레벨 정보 사용
@@ -111,9 +114,12 @@ export default function CourseMemberAssignmentModal({
             };
           });
           
-          console.log('👥 배열에서 학생 회원 목록:', studentMembersFromArray.length, '명');
+          logger.info(`배열에서 학생 회원 목록: ${studentMembersFromArray.length}명`);
           if (studentMembersFromArray.length > 0) {
-            console.log('📊 첫 번째 회원:', studentMembersFromArray[0].name, '레벨:', studentMembersFromArray[0].currentLevel);
+            logger.debug('첫 번째 회원', {
+              name: studentMembersFromArray[0].name,
+              level: studentMembersFromArray[0].currentLevel
+            });
           }
           
           setMembers(studentMembersFromArray);
@@ -122,9 +128,9 @@ export default function CourseMemberAssignmentModal({
         
         // 만약 data.data가 배열이라면
         if (Array.isArray(data.data)) {
-          console.log('📊 data.data가 배열입니다. 사용합니다.');
+          logger.debug('data.data가 배열입니다. 사용합니다.');
           const allMembersFromUsers = data.data;
-          console.log('📊 users에서 추출된 회원 목록:', allMembersFromUsers);
+          logger.debug('users에서 추출된 회원 목록', allMembersFromUsers);
           
           // 학생 회원만 필터링하고 실제 레벨 정보 사용
           const studentMembersFromUsers = allMembersFromUsers.filter((member: Member) => 
@@ -136,9 +142,12 @@ export default function CourseMemberAssignmentModal({
             };
           });
           
-          console.log('👥 users에서 학생 회원 목록:', studentMembersFromUsers.length, '명');
+          logger.info(`users에서 학생 회원 목록: ${studentMembersFromUsers.length}명`);
           if (studentMembersFromUsers.length > 0) {
-            console.log('📊 첫 번째 회원:', studentMembersFromUsers[0].name, '레벨:', studentMembersFromUsers[0].currentLevel);
+            logger.debug('첫 번째 회원', {
+              name: studentMembersFromUsers[0].name,
+              level: studentMembersFromUsers[0].currentLevel
+            });
           }
           
           setMembers(studentMembersFromUsers);
@@ -155,19 +164,22 @@ export default function CourseMemberAssignmentModal({
           };
         });
         
-        console.log('👥 학생 회원 목록:', studentMembers.length, '명');
+        logger.info(`학생 회원 목록: ${studentMembers.length}명`);
         if (studentMembers.length > 0) {
-          console.log('📊 첫 번째 회원:', studentMembers[0].name, '레벨:', studentMembers[0].currentLevel);
+          logger.debug('첫 번째 회원', {
+            name: studentMembers[0].name,
+            level: studentMembers[0].currentLevel
+          });
         }
                
         setMembers(studentMembers);
       } else {
         const errorData = await response.json();
-        console.error('❌ 회원 목록 로드 실패:', errorData);
+        logger.error('회원 목록 로드 실패:', errorData);
         alert(`회원 목록 로드에 실패했습니다: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('회원 목록 로드 오류:', error);
+      logger.error('회원 목록 로드 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -182,8 +194,7 @@ export default function CourseMemberAssignmentModal({
 
   // 체크박스 토글
   const toggleMemberSelection = (memberId: string) => {
-    console.log('🔄 회원 선택 토글:', memberId);
-    console.log('🔄 현재 선택된 회원들:', selectedMembers);
+    logger.debug('회원 선택 토글', { memberId, selectedMembers });
     
     setSelectedMembers(prev => {
       // 이미 선택된 경우 해제
@@ -202,7 +213,7 @@ export default function CourseMemberAssignmentModal({
       
       // 새로 선택
       const newSelection = [...prev, memberId];
-      console.log('🔄 새로운 선택된 회원들:', newSelection);
+      logger.debug('새로운 선택된 회원들', newSelection);
       return newSelection;
     });
   };
@@ -248,7 +259,7 @@ export default function CourseMemberAssignmentModal({
       setSelectedMembers([]);
       onClose();
     } catch (error) {
-      console.error('회원 배정 오류:', error);
+      logger.error('회원 배정 오류:', error);
     } finally {
       setAssigning(false);
     }
@@ -271,8 +282,8 @@ export default function CourseMemberAssignmentModal({
 
   useEffect(() => {
     if (isOpen && course) {
-      console.log('📋 모달 열림 - 강습 과정:', course.name);
-      console.log('📋 선택된 회원 초기화');
+      logger.debug('모달 열림', { courseName: course.name });
+      logger.debug('선택된 회원 초기화');
       setSelectedMembers([]);
       setSearchTerm(''); // 검색어 초기화
       loadMembers();
@@ -386,7 +397,7 @@ export default function CourseMemberAssignmentModal({
                   {filteredMembers.map((member) => {
                     const isSelected = selectedMembers.includes(member._id);
                     const isAlreadyEnrolled = member.isEnrolledInSpecificCourse;
-                    console.log(`📋 회원 ${member.name} 렌더링 - 선택됨: ${isSelected}, 이미 배정됨: ${isAlreadyEnrolled}`);
+                    logger.debug(`회원 ${member.name} 렌더링`, { isSelected, isAlreadyEnrolled });
                     
                     return (
                     <div
@@ -405,7 +416,7 @@ export default function CourseMemberAssignmentModal({
                         disabled={isAlreadyEnrolled}
                         onChange={(e) => {
                           e.stopPropagation();
-                          console.log('🔘 체크박스 클릭:', member.name, member._id);
+                          logger.debug('체크박스 클릭', { name: member.name, id: member._id });
                           toggleMemberSelection(member._id);
                         }}
                         className={`mr-3 h-4 w-4 text-blue-600 ${

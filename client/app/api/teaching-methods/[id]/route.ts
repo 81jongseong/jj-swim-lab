@@ -1,17 +1,11 @@
-/**
- * @file 강습법 개별 API 라우트 (Next.js API Routes)
- * @description 특정 강습법의 수정, 삭제를 처리하는 동적 라우트
- * @date 2025-01-13
- * @author JJ Swim Lab
- */
-
+import { logger } from '@/lib/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    console.log('🔍 강습법 수정 API 라우트 호출됨:', params.id);
+    logger.info('🔍 강습법 수정 API 라우트 호출됨:', params.id);
     
     const authHeader = request.headers.get('authorization');
     const body = await request.json();
@@ -32,11 +26,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       body: JSON.stringify(body),
     });
 
-    console.log('📡 백엔드 응답 상태:', backendResponse.status);
+    logger.info('📡 백엔드 응답 상태:', backendResponse.status);
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.text();
-      console.error('❌ 백엔드 오류:', errorData);
+      logger.error('❌ 백엔드 오류:', errorData);
       return NextResponse.json(
         { error: '백엔드 서버 오류' },
         { status: backendResponse.status }
@@ -44,10 +38,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const data = await backendResponse.json();
-    console.log('✅ 강습법 수정 성공');
+    logger.info('✅ 강습법 수정 성공');
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ 강습법 수정 API 라우트 오류:', error);
+    logger.error('❌ 강습법 수정 API 라우트 오류:', error);
     return NextResponse.json(
       { error: '서버 내부 오류' },
       { status: 500 }
@@ -57,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    console.log('🔍 강습법 삭제 API 라우트 호출됨:', params.id);
+    logger.info('🔍 강습법 삭제 API 라우트 호출됨:', params.id);
     
     const authHeader = request.headers.get('authorization');
     
@@ -76,11 +70,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       },
     });
 
-    console.log('📡 백엔드 응답 상태:', backendResponse.status);
+    logger.info('📡 백엔드 응답 상태:', backendResponse.status);
 
     if (!backendResponse.ok) {
       const errorData = await backendResponse.text();
-      console.error('❌ 백엔드 오류:', errorData);
+      logger.error('❌ 백엔드 오류:', errorData);
       return NextResponse.json(
         { error: '백엔드 서버 오류' },
         { status: backendResponse.status }
@@ -88,10 +82,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const data = await backendResponse.json();
-    console.log('✅ 강습법 삭제 성공');
+    logger.info('✅ 강습법 삭제 성공');
     return NextResponse.json(data);
   } catch (error) {
-    console.error('❌ 강습법 삭제 API 라우트 오류:', error);
+    logger.error('❌ 강습법 삭제 API 라우트 오류:', error);
     return NextResponse.json(
       { error: '서버 내부 오류' },
       { status: 500 }

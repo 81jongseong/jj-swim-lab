@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Activity, Target, Calendar, TrendingUp, Plus, Edit, Trash2 } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { PageHeader, LoadingState } from '@/components/common';
 
 interface HealthProgram {
   _id: string;
@@ -120,7 +122,7 @@ function HealthProgramsPage() {
       ];
       setPrograms(tempPrograms);
     } catch (error) {
-      console.error('건강 프로그램 로드 실패:', error);
+      logger.error('건강 프로그램 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +187,7 @@ function HealthProgramsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
@@ -193,12 +195,10 @@ function HealthProgramsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">건강 프로그램 관리</h1>
-            <p className="text-gray-600">회원들의 건강을 위한 맞춤형 프로그램을 관리하세요</p>
-          </div>
+      <PageHeader
+        title="건강 프로그램 관리"
+        description="회원들의 건강을 위한 맞춤형 프로그램을 관리하세요"
+        actions={
           <button 
             onClick={() => setIsCreating(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
@@ -206,8 +206,8 @@ function HealthProgramsPage() {
             <Plus className="w-4 h-4 mr-2" />
             새 프로그램 추가
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -18,6 +18,7 @@ import { useSearchParams } from 'next/navigation';
 import SwimProgramGenerator from '../../src/swimlab/components/SwimProgramGenerator';
 import { seedConditionIds } from '../../src/swimlab/utils/idmap';
 import { MSK_28_IDS } from '../../src/swimlab/data/conditions_msk28_index';
+import { LoadingState } from '@/components/common';
 
 export default function Page() {
   // 리다이렉트: 기존 swimlab 페이지를 수영엔진으로 이동
@@ -27,13 +28,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">수영엔진으로 이동 중...</p>
-        <p className="text-sm text-gray-500 mt-2">
-          곧 새로운 통합 페이지로 이동됩니다.
-        </p>
-      </div>
+      <LoadingState message="수영엔진으로 이동 중..." size="lg" />
     </div>
   );
 }

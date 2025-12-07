@@ -11,6 +11,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -269,10 +270,10 @@ export default function SignupPage() {
         };
       }
 
-      console.warn('⚠️ 주소에서 좌표를 찾을 수 없습니다:', address);
+      logger.warn('⚠️ 주소에서 좌표를 찾을 수 없습니다:', address);
       return null;
     } catch (error) {
-      console.error('❌ 좌표 변환 오류:', error);
+      logger.error('❌ 좌표 변환 오류:', error);
       return null;
     }
   };
@@ -299,7 +300,7 @@ export default function SignupPage() {
         // 🆕 주소 → 위도/경도 변환
         const coords = await getCoordinatesFromAddress(fullAddress);
         if (coords) {
-          console.log('✅ 좌표 변환 성공:', coords);
+          logger.info('✅ 좌표 변환 성공:', coords);
           setFormData(prev => ({
             ...prev,
             latitude: coords.lat,
@@ -478,7 +479,7 @@ export default function SignupPage() {
         };
       }
 
-      console.log('📤 회원가입 요청 데이터:', requestData);
+      logger.info('📤 회원가입 요청 데이터:', requestData);
 
       const response = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
@@ -492,7 +493,7 @@ export default function SignupPage() {
 
       if (!response.ok) {
         // 에러 응답 처리
-        console.error('❌ 회원가입 에러 응답:', result);
+        logger.error('❌ 회원가입 에러 응답:', result);
         alert(`회원가입 실패: ${result.error || result.message || '알 수 없는 오류'}`);
         return;
       }
@@ -501,11 +502,11 @@ export default function SignupPage() {
         alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
         window.location.href = '/auth/login';
       } else {
-        console.error('❌ 회원가입 실패:', result);
+        logger.error('❌ 회원가입 실패:', result);
         alert(`회원가입 실패: ${result.error || result.message || '알 수 없는 오류'}`);
       }
     } catch (error) {
-      console.error('❌ 회원가입 오류:', error);
+      logger.error('❌ 회원가입 오류:', error);
       alert('회원가입 중 오류가 발생했습니다.');
     }
   };

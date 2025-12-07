@@ -7,21 +7,7 @@
 
 import React from 'react';
 import { Edit, Trash2 } from 'lucide-react';
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  userType: 'student' | 'instructor' | 'centerAdmin';
-  status: 'active' | 'inactive' | 'pending';
-  joinedAt: Date;
-  lastLogin?: Date;
-  membershipType?: string;
-  membershipExpiry?: Date;
-  totalClasses?: number;
-  totalPayments?: number;
-}
+import type { User } from '@/types/user';
 
 interface UserTableProps {
   users: User[];

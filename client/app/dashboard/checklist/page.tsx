@@ -1,8 +1,10 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { CardGrid, LoadingState, PageHeader } from '@/components/common';
+import { Button } from '@/components/ui';
 import withAuth from '../../../components/withAuth';
 
 interface ChecklistItem {
@@ -65,12 +67,12 @@ function MemberChecklistPage() {
         // 사용자의 진행 상황도 가져오기
         await loadUserProgress();
       } else {
-        console.error('강습목록을 가져오는데 실패했습니다:', response.statusText);
+        logger.error('강습목록을 가져오는데 실패했습니다:', response.statusText);
         // 폴백: 기본 데이터 표시
         setTeachingMethods([]);
       }
     } catch (error) {
-      console.error('체크리스트 로딩 오류:', error);
+      logger.error('체크리스트 로딩 오류:', error);
       setTeachingMethods([]);
     } finally {
       setLoading(false);
@@ -89,7 +91,7 @@ function MemberChecklistPage() {
       
       if (checklistResponse.ok) {
         const checklistData = await checklistResponse.json();
-        console.log('체크리스트 진행상황:', checklistData);
+        logger.info('체크리스트 진행상황:', checklistData);
         
         // 체크리스트 데이터를 courseProgress 형식으로 변환
         if (checklistData.data && checklistData.data.length > 0) {
@@ -114,7 +116,7 @@ function MemberChecklistPage() {
         }
       }
     } catch (error) {
-      console.error('진행 상황 로딩 오류:', error);
+      logger.error('진행 상황 로딩 오류:', error);
     }
   };
 
@@ -151,10 +153,7 @@ function MemberChecklistPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">체크리스트를 불러오는 중...</p>
-        </div>
+        <LoadingState message="체크리스트를 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -163,10 +162,10 @@ function MemberChecklistPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">학습 체크리스트</h1>
-          <p className="text-gray-600">수영 강습 과정의 진행 상황을 확인하고 관리하세요</p>
-        </div>
+        <PageHeader
+          title="학습 체크리스트"
+          description="수영 강습 과정의 진행 상황을 확인하고 관리하세요"
+        />
 
         {/* 강습 과정 목록 */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -228,7 +227,7 @@ function MemberChecklistPage() {
 
         {/* 진행률 통계 카드 */}
         {courseProgress.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mt-8">
+          <CardGrid gap={6} className="mt-8">
             <StatCard
               title="전체 진행률"
               value={`${Math.round(courseProgress.reduce((sum, course) => sum + course.overallProgress, 0) / courseProgress.length)}%`}
@@ -261,7 +260,7 @@ function MemberChecklistPage() {
               subtitle="시작 대기 중"
               change={{ value: 0, type: 'increase' }}
             />
-          </div>
+          </CardGrid>
         )}
 
         {/* 강습 방법 목록 */}

@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, TrendingUp, Activity, Target, Clock, Users } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { LoadingState } from '@/components/common';
 
 interface AlgorithmPerformance {
   algorithmId: string;
@@ -69,7 +71,7 @@ function AlgorithmPerformancePage() {
       ];
       setPerformanceData(tempData);
     } catch (error) {
-      console.error('알고리즘 성과 데이터 로드 실패:', error);
+      logger.error('알고리즘 성과 데이터 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +80,7 @@ function AlgorithmPerformancePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }

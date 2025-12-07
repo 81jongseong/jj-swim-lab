@@ -72,9 +72,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Modal from './ui/modal';
-import Button from './ui/button';
-import { Input } from './ui/input';
+import { Modal, Button, Input } from '@/components/ui';
 
 interface TeachingMethod {
   _id: string;

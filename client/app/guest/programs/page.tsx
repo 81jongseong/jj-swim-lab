@@ -9,11 +9,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Target } from 'lucide-react';
 import { canEditProgram, MEMBERSHIP_CONFIGS } from '@/types/membership';
+import { LoadingState, ErrorState } from '@/components/common';
 
 export default function GuestProgramsPage() {
   const router = useRouter();
@@ -37,9 +39,9 @@ export default function GuestProgramsPage() {
     });
     if (savedProgram) {
       const parsed = JSON.parse(savedProgram);
-      console.log('📦 로드된 프로그램:', parsed);
-      console.log('🔍 엔진 출력 존재?:', !!parsed.engineOutput);
-      console.log('🔍 엔진 출력 구조:', parsed.engineOutput);
+      logger.info('📦 로드된 프로그램:', parsed);
+      logger.info('🔍 엔진 출력 존재?:', !!parsed.engineOutput);
+      logger.info('🔍 엔진 출력 구조:', parsed.engineOutput);
       setProgram(parsed);
     }
     setLoading(false);
@@ -48,10 +50,7 @@ export default function GuestProgramsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">프로그램 로딩 중...</p>
-        </div>
+        <LoadingState message="프로그램 로딩 중..." size="lg" />
       </div>
     );
   }

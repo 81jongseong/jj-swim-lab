@@ -1,29 +1,4 @@
-/**
- * 🗺️ JJ Swim Lab - 합성 점(Synthetic Dots) API
- * 
- * 📋 **API 목적**
- * - H3 셀 집계 결과를 기반으로 합성 점 생성
- * - 도넛 지오마스킹으로 프라이버시 보호
- * - 로컬 반경 밀도 계산 (300m 이웃 수)
- * 
- * 🔄 **주요 기능**
- * - 셀 중심 주변 도넛 마스킹 (80-180m)
- * - 센터별 점 개수 비율 분할
- * - 로컬 밀도 계산 (H3 kRing 기반)
- * - 성능 보호 (최대 30개 점/셀)
- * 
- * 🗄️ **데이터 연동**
- * - /api/geo/aggregate-centers API
- * - H3 헥사곤 그리드 시스템
- * - 프라이버시 보호 알고리즘
- * 
- * ⚠️ **개발 시 주의사항**
- * 1. 실제 주소/좌표는 절대 사용하지 않음
- * 2. 합성 점만 생성하여 프라이버시 보호
- * 3. 점 개수는 성능을 고려하여 제한
- * 4. 센터별 비율에 따라 점 분할
- */
-
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import * as h3 from 'h3-js';
 import { 
@@ -76,7 +51,7 @@ const MAX_POINTS_PER_CELL = 30; // 성능 보호. 큰 셀은 포인트로 다운
  */
 export async function GET() {
   try {
-    console.log('🗺️ 합성 점 API 호출 시작');
+    logger.info('🗺️ 합성 점 API 호출 시작');
 
     // JWT 세션 파싱 (목업)
     // TODO: 실제 JWT 토큰에서 추출
@@ -116,7 +91,7 @@ export async function GET() {
     }
     
     const cells: Cell[] = result.data.cells;
-    console.log(`📊 셀 집계 데이터: ${cells.length}개 셀`);
+    logger.info(`📊 셀 집계 데이터: ${cells.length}개 셀`);
 
     // 2) 셀 → 합성 점 생성
     const dots: { lng: number; lat: number; centerId: string; cellId: string }[] = [];
@@ -152,7 +127,7 @@ export async function GET() {
       }
     }
 
-    console.log(`✅ 합성 점 생성 완료: ${dots.length}개 점`);
+    logger.info(`✅ 합성 점 생성 완료: ${dots.length}개 점`);
 
     // 3) 가시성 정책 적용 (센터별 필터링)
     // TODO: 실제로는 하락 판단 정책을 적용해야 하지만, 
@@ -172,7 +147,7 @@ export async function GET() {
       return true;
     });
 
-    console.log(`🔒 가시성 정책 적용: ${dots.length} → ${visibleDots.length}개 점`);
+    logger.info(`🔒 가시성 정책 적용: ${dots.length} → ${visibleDots.length}개 점`);
 
     // 4) **로컬 반경 밀도 계산**: H3 r=10(≈150m) + kRing(반경 2 → ≈300~450m)
     const RES = 10, RING = 2;
@@ -190,7 +165,7 @@ export async function GET() {
       localDensity: computeLocalDensity(dotBucket[i], RING, bucketCount)
     }));
 
-    console.log(`✅ 로컬 밀도 계산 완료: 평균 ${(dotsWithDensity.reduce((s, d) => s + d.localDensity, 0) / dotsWithDensity.length).toFixed(1)}개/점`);
+    logger.info(`✅ 로컬 밀도 계산 완료: 평균 ${(dotsWithDensity.reduce((s, d) => s + d.localDensity, 0) / dotsWithDensity.length).toFixed(1)}개/점`);
 
     // 감사 로그 생성
     const auditLog = createAuditLog('geo_points_view', mockSession, {
@@ -198,7 +173,7 @@ export async function GET() {
       visibleDots: visibleDots.length,
       finalDots: dotsWithDensity.length
     });
-    console.log('📋 감사 로그:', auditLog);
+    logger.info('📋 감사 로그:', auditLog);
 
     // 5) 응답 데이터
     const response = {
@@ -238,7 +213,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('❌ 합성 점 API 오류:', error);
+    logger.error('❌ 합성 점 API 오류:', error);
 
     return NextResponse.json({
       success: false,

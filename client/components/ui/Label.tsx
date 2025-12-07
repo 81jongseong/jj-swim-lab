@@ -1,3 +1,19 @@
+/**
+ * 📦 JJ Swim Lab - Label UI 컴포넌트
+ * 
+ * 📋 **파일 목적**
+ * - shadcn/ui 스타일의 Label 컴포넌트
+ * - 폼 요소 라벨링 제공
+ * 
+ * 🔄 **연동되는 파일**
+ * - components/ui/index.ts (export)
+ * - 모든 페이지의 라벨 요소
+ * 
+ * 🗄️ **데이터 연동**
+ * - htmlFor: 연결된 input의 id
+ * - className: 추가 스타일 클래스
+ */
+
 "use client"
 
 import * as React from "react"

@@ -12,7 +12,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface ErrorStateProps {
@@ -32,8 +32,8 @@ export default function ErrorState({
     <div className={`flex flex-col items-center justify-center p-8 ${className}`}>
       <div className="text-6xl mb-4">❌</div>
       <Alert variant="destructive" className="max-w-md">
-        <Alert.Title>오류</Alert.Title>
-        <Alert.Description>{message}</Alert.Description>
+        <AlertTitle>오류</AlertTitle>
+        <AlertDescription>{message}</AlertDescription>
       </Alert>
       {onRetry && (
         <Button

@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useEffect, useState } from 'react';
 import { User, Search, Star, Calendar, Award, Phone, Mail } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import withAuth from '../../../components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface Instructor {
   _id: string;
@@ -38,7 +40,7 @@ function InstructorsManagement() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        console.error('토큰이 없습니다.');
+        logger.error('토큰이 없습니다.');
         setInstructors([]);
         return;
       }
@@ -101,9 +103,9 @@ function InstructorsManagement() {
 
       const sortedInstructors = mappedInstructors.sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
       setInstructors(sortedInstructors);
-      console.log('✅ 강사 데이터 로드 완료:', sortedInstructors.length, '명');
+      logger.info('✅ 강사 데이터 로드 완료:', sortedInstructors.length, '명');
     } catch (error) {
-      console.error('강사 목록 로드 실패:', error);
+      logger.error('강사 목록 로드 실패:', error);
       setInstructors([]);
     } finally {
       setIsLoading(false);
@@ -152,17 +154,17 @@ function InstructorsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <LoadingState message="로딩 중..." size="md" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">👨‍🏫 강사 관리</h1>
-        <p className="text-sm text-gray-600">센터 소속 강사들을 관리하고 평가하세요</p>
-      </div>
+      <PageHeader
+        title="👨‍🏫 강사 관리"
+        description="센터 소속 강사들을 관리하고 평가하세요"
+      />
 
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="relative">

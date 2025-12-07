@@ -1,9 +1,11 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { CardGrid, LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
+import { Button } from '@/components/ui';
 import { canAccessCommunity, MEMBERSHIP_CONFIGS, type MembershipTier } from '@/types/membership';
 // UI 컴포넌트를 HTML 요소로 교체하여 Element type is invalid 오류 방지
 // Tabs 컴포넌트 대신 커스텀 탭 버튼 사용
@@ -64,6 +66,7 @@ export default function CommunityPage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -77,8 +80,8 @@ export default function CommunityPage() {
 
   // 디버깅용
   useEffect(() => {
-    console.log('🔍 커뮤니티 페이지 - 사용자:', user);
-    console.log('🔍 isFormOpen:', isFormOpen);
+    logger.info('🔍 커뮤니티 페이지 - 사용자:', user);
+    logger.info('🔍 isFormOpen:', isFormOpen);
   }, [user, isFormOpen]);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [communityRules, setCommunityRules] = useState({
@@ -113,6 +116,19 @@ export default function CommunityPage() {
       level: ''
     }
   });
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // 탭 기반 카테고리 구조로 개선 (번개모임, 기술 피드백 추가)
   const categories = [
@@ -134,6 +150,7 @@ export default function CommunityPage() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // 실제 API 호출 시도
       try {
@@ -146,9 +163,11 @@ export default function CommunityPage() {
             setLoading(false);
             return;
           }
+        } else if (!response.ok) {
+          throw new Error('게시글을 불러오는데 실패했습니다.');
         }
       } catch (apiError) {
-        console.warn('⚠️ API 연결 실패, 샘플 데이터 사용:', apiError);
+        logger.warn('⚠️ API 연결 실패, 샘플 데이터 사용:', apiError);
       }
       
       // API 실패 또는 데이터 없을 시 샘플 데이터 사용
@@ -269,8 +288,9 @@ export default function CommunityPage() {
       ];
       
       setPosts(mockPosts);
-    } catch (error) {
-      console.error('게시글 조회 실패:', error);
+    } catch (err: any) {
+      logger.error('게시글 조회 실패:', err);
+      setError(err.message || '게시글을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -285,76 +305,94 @@ export default function CommunityPage() {
 
   // 최고 관리자 기능
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('이 게시글을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) return;
+    setConfirmModal({
+      isOpen: true,
+      message: '이 게시글을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.',
+      variant: 'danger',
+      onConfirm: async () => {
+        // 일단 로컬에서 즉시 제거 (사용자 경험 개선)
+        setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
+        alert('✅ 게시글이 삭제되었습니다.');
 
-    // 일단 로컬에서 즉시 제거 (사용자 경험 개선)
-    setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
-    alert('✅ 게시글이 삭제되었습니다.');
+        // 백그라운드에서 API 호출 시도
+        try {
+          const response = await fetch(`http://localhost:5000/api/community/posts/${postId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
 
-    // 백그라운드에서 API 호출 시도
-    try {
-      const response = await fetch(`http://localhost:5000/api/community/posts/${postId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          if (response.ok) {
+            logger.info('✅ 서버에서도 삭제 완료');
+          } else {
+            logger.warn('⚠️ 서버 삭제 실패 (로컬에서는 삭제됨)');
+          }
+        } catch (error) {
+          logger.warn('⚠️ API 미연결 (로컬에서는 삭제됨)', error);
         }
-      });
-
-      if (response.ok) {
-        console.log('✅ 서버에서도 삭제 완료');
-      } else {
-        console.warn('⚠️ 서버 삭제 실패 (로컬에서는 삭제됨)');
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
       }
-    } catch (error) {
-      console.warn('⚠️ API 미연결 (로컬에서는 삭제됨)', error);
-    }
+    });
   };
 
   const handleBlindPost = async (postId: string, isCurrentlyBlinded: boolean = false) => {
     if (isCurrentlyBlinded) {
       // 블라인드 해제
-      if (!confirm('이 게시글의 블라인드를 해제하시겠습니까?\n\n일반 사용자에게 다시 보이게 됩니다.')) return;
+      setConfirmModal({
+        isOpen: true,
+        message: '이 게시글의 블라인드를 해제하시겠습니까?\n\n일반 사용자에게 다시 보이게 됩니다.',
+        variant: 'info',
+        onConfirm: async () => {
+          setPosts(prevPosts => prevPosts.map(p => 
+            p._id === postId ? { ...p, isBlinded: false } : p
+          ));
+          alert('✅ 블라인드가 해제되었습니다.');
 
-      setPosts(prevPosts => prevPosts.map(p => 
-        p._id === postId ? { ...p, isBlinded: false } : p
-      ));
-      alert('✅ 블라인드가 해제되었습니다.');
-
-      // 백그라운드에서 API 호출
-      try {
-        await fetch(`http://localhost:5000/api/community/posts/${postId}/unblind`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
+          // 백그라운드에서 API 호출
+          try {
+            await fetch(`http://localhost:5000/api/community/posts/${postId}/unblind`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            logger.info('✅ 서버에서도 블라인드 해제 완료');
+          } catch (error) {
+            logger.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
           }
-        });
-        console.log('✅ 서버에서도 블라인드 해제 완료');
-      } catch (error) {
-        console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
-      }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
+      });
     } else {
       // 블라인드 처리
-      if (!confirm('이 게시글을 블라인드 처리하시겠습니까?\n\n일반 사용자에게는 보이지 않게 됩니다.')) return;
+      setConfirmModal({
+        isOpen: true,
+        message: '이 게시글을 블라인드 처리하시겠습니까?\n\n일반 사용자에게는 보이지 않게 됩니다.',
+        variant: 'warning',
+        onConfirm: async () => {
+          setPosts(prevPosts => prevPosts.map(p => 
+            p._id === postId ? { ...p, isBlinded: true } : p
+          ));
+          alert('✅ 게시글이 블라인드 처리되었습니다.');
 
-      setPosts(prevPosts => prevPosts.map(p => 
-        p._id === postId ? { ...p, isBlinded: true } : p
-      ));
-      alert('✅ 게시글이 블라인드 처리되었습니다.');
-
-      // 백그라운드에서 API 호출
-      try {
-        await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
+          // 백그라운드에서 API 호출
+          try {
+            await fetch(`http://localhost:5000/api/community/posts/${postId}/blind`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            logger.info('✅ 서버에서도 블라인드 완료');
+          } catch (error) {
+            logger.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
           }
-        });
-        console.log('✅ 서버에서도 블라인드 완료');
-      } catch (error) {
-        console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
-      }
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
+      });
     }
   };
 
@@ -383,12 +421,12 @@ export default function CommunityPage() {
       });
 
       if (response.ok) {
-        console.log('✅ 서버에서도 경고 발송 완료');
+        logger.info('✅ 서버에서도 경고 발송 완료');
       } else {
-        console.warn('⚠️ 서버 경고 발송 실패 (로컬에서는 처리됨)');
+        logger.warn('⚠️ 서버 경고 발송 실패 (로컬에서는 처리됨)');
       }
     } catch (error) {
-      console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
+      logger.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
     }
   };
 
@@ -408,7 +446,7 @@ export default function CommunityPage() {
         setShowRulesModal(false);
       }
     } catch (error) {
-      console.error('규칙 저장 오류:', error);
+      logger.error('규칙 저장 오류:', error);
       alert('규칙 저장 중 오류가 발생했습니다.');
     }
   };
@@ -422,9 +460,12 @@ export default function CommunityPage() {
     const post = posts.find(p => p._id === postId);
     if (!post?.meetupDetails) return;
 
-    if (!confirm(`🏊‍♂️ 번개모임 참가 신청\n\n📍 장소: ${post.meetupDetails.location}\n⏰ 시간: ${post.meetupDetails.time}\n💰 비용: ${post.meetupDetails.cost.toLocaleString()}원\n\n참가하시겠습니까?`)) return;
-
-    // 일단 로컬에서 즉시 처리
+    setConfirmModal({
+      isOpen: true,
+      message: `🏊‍♂️ 번개모임 참가 신청\n\n📍 장소: ${post.meetupDetails.location}\n⏰ 시간: ${post.meetupDetails.time}\n💰 비용: ${post.meetupDetails.cost.toLocaleString()}원\n\n참가하시겠습니까?`,
+      variant: 'info',
+      onConfirm: async () => {
+        // 일단 로컬에서 즉시 처리
     setPosts(prevPosts => prevPosts.map(p => {
       if (p._id === postId && p.meetupDetails) {
         return {
@@ -453,14 +494,17 @@ export default function CommunityPage() {
         })
       });
 
-      if (response.ok) {
-        console.log('✅ 서버에서도 참가 신청 완료');
-      } else {
-        console.warn('⚠️ 서버 참가 신청 실패 (로컬에서는 처리됨)');
+        if (response.ok) {
+          logger.info('✅ 서버에서도 참가 신청 완료');
+        } else {
+          logger.warn('⚠️ 서버 참가 신청 실패 (로컬에서는 처리됨)');
+        }
+      } catch (error) {
+        logger.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
       }
-    } catch (error) {
-      console.warn('⚠️ API 미연결 (로컬에서는 처리됨)', error);
-    }
+      setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+      }
+    });
   };
 
   const handleSubmitPost = async (e: React.FormEvent) => {
@@ -511,7 +555,7 @@ export default function CommunityPage() {
       
       alert('게시글이 작성되었습니다.');
     } catch (error) {
-      console.error('게시글 작성 실패:', error);
+      logger.error('게시글 작성 실패:', error);
       alert('게시글 작성에 실패했습니다.');
     }
   };
@@ -530,12 +574,24 @@ export default function CommunityPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">로딩 중...</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              fetchPosts();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -544,12 +600,10 @@ export default function CommunityPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">🏘️ 수영 커뮤니티</h1>
-          <p className="mt-2 text-gray-600">
-            수영에 대한 정보를 공유하고 다른 수영인들과 소통해보세요.
-          </p>
-        </div>
+        <PageHeader
+          title="🏘️ 수영 커뮤니티"
+          description="수영에 대한 정보를 공유하고 다른 수영인들과 소통해보세요."
+        />
         
         {/* 🎁 게스트 상태 배너 */}
         {isGuest && (
@@ -590,7 +644,7 @@ export default function CommunityPage() {
         )}
 
         {/* 커뮤니티 통계 카드 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <CardGrid gap={6} className="mb-6">
           <StatCard
             title="전체 게시글"
             value={posts.length.toString()}
@@ -623,7 +677,7 @@ export default function CommunityPage() {
             subtitle="진행 중인 모임"
             change={{ value: 5.7, type: 'increase' }}
           />
-        </div>
+        </CardGrid>
 
         {/* 검색 및 글쓰기 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -650,9 +704,12 @@ export default function CommunityPage() {
                   </Button>
                   <Button
                     onClick={async () => {
-                      if (!confirm('샘플 게시글 10개를 생성하시겠습니까?')) return;
-                      
-                      const samples = [
+                      setConfirmModal({
+                        isOpen: true,
+                        message: '샘플 게시글 10개를 생성하시겠습니까?',
+                        variant: 'info',
+                        onConfirm: async () => {
+                          const samples = [
                         { title: '💡 자유형 호흡법 완전 정복 가이드', content: '자유형 호흡법을 마스터하는 단계별 가이드입니다.\n\n1️⃣ 기본 자세\n2️⃣ 호흡 타이밍\n3️⃣ 연습 방법', category: 'tip' },
                         { title: '⭐ JJ Swim Lab 3개월 수강 후기', content: '3개월 수업 듣고 많이 늘었어요!\n\n✅ 실력 향상\n✅ 자세 개선', category: 'review' },
                         { title: '❓ 접영 킥 동작이 어려워요', content: '접영 킥 연습 중인데 물살이 안 생겨요. 조언 부탁드립니다!', category: 'question' },
@@ -674,10 +731,13 @@ export default function CommunityPage() {
                             body: JSON.stringify(post)
                           });
                           if (res.ok) count++;
-                        } catch (e) { console.error(e); }
+                        } catch (e) { logger.error(e); }
                       }
-                      alert(`✅ ${count}개 샘플 게시글 생성 완료!`);
-                      fetchPosts();
+                          alert(`✅ ${count}개 샘플 게시글 생성 완료!`);
+                          fetchPosts();
+                          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                        }
+                      });
                     }}
                     variant="primary"
                     size="md"
@@ -690,7 +750,7 @@ export default function CommunityPage() {
               {canWrite ? (
                 <Button
                   onClick={() => {
-                    console.log('글쓰기 버튼 클릭, user:', user);
+                    logger.info('글쓰기 버튼 클릭, user:', user);
                     setIsFormOpen(true);
                   }}
                   variant="primary"
@@ -1379,6 +1439,18 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
+
+        {/* ConfirmModal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+          variant={confirmModal.variant || 'info'}
+          title="확인"
+          confirmText="확인"
+          cancelText="취소"
+        />
       </div>
     </div>
   );

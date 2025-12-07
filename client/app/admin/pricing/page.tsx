@@ -19,9 +19,11 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface PricingPolicy {
   student: {
@@ -86,7 +88,7 @@ export default function PricingPolicyPage() {
         setPricingPolicy(data.data);
       }
     } catch (error) {
-      console.error('요금 정책 로드 오류:', error);
+      logger.error('요금 정책 로드 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -136,7 +138,7 @@ export default function PricingPolicyPage() {
       
       setPreview(previewData);
     } catch (error) {
-      console.error('미리보기 생성 오류:', error);
+      logger.error('미리보기 생성 오류:', error);
     }
   };
 
@@ -162,7 +164,7 @@ export default function PricingPolicyPage() {
         alert('요금 정책 업데이트에 실패했습니다.');
       }
     } catch (error) {
-      console.error('요금 정책 저장 오류:', error);
+      logger.error('요금 정책 저장 오류:', error);
       alert('요금 정책 저장 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
@@ -192,12 +194,7 @@ export default function PricingPolicyPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">요금 정책을 불러오는 중...</p>
-            </div>
-          </div>
+          <LoadingState message="요금 정책을 불러오는 중..." size="lg" />
         </div>
       </div>
     );
@@ -207,10 +204,10 @@ export default function PricingPolicyPage() {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">💰 요금 정책 관리</h1>
-          <p className="text-gray-600">사용자 타입별 차등 요금 정책을 설정하고 관리합니다.</p>
-        </div>
+        <PageHeader
+          title="💰 요금 정책 관리"
+          description="사용자 타입별 차등 요금 정책을 설정하고 관리합니다."
+        />
 
         {/* 탭 네비게이션 */}
         <div className="mb-8">

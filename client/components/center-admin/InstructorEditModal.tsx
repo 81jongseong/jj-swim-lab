@@ -47,6 +47,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, DollarSign, Briefcase, History, Star } from 'lucide-react';
@@ -212,14 +213,14 @@ export default function InstructorEditModal({
         }
       };
       
-      console.log('🔥 InstructorEditModal 저장 데이터:', saveData);
-      console.log('🔥 현재 폼 데이터:', formData);
+      logger.info('🔥 InstructorEditModal 저장 데이터:', saveData);
+      logger.info('🔥 현재 폼 데이터:', formData);
       
       await onSave(saveData as any);
       onClose();
     } catch (error) {
-      console.error('❌ 강사 정보 저장 실패:', error);
-      console.error('📋 에러 상세:', error);
+      logger.error('❌ 강사 정보 저장 실패:', error);
+      logger.error('📋 에러 상세:', error);
       alert(`저장 중 오류가 발생했습니다: ${error.message || error}`);
     } finally {
       setIsSaving(false);
@@ -390,7 +391,7 @@ export default function InstructorEditModal({
                         alert(error.message || '강사 사진 업로드에 실패했습니다.');
                       }
                     } catch (error) {
-                      console.error('강사 사진 업로드 오류:', error);
+                      logger.error('강사 사진 업로드 오류:', error);
                       alert('강사 사진 업로드 중 오류가 발생했습니다.');
                     } finally {
                       setUploadingPhoto(false);

@@ -16,9 +16,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import withAuth from '@/components/withAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import { 
   Loader2, 
   Sparkles, 
@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import apiClient from '@/utils/api';
 import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
+import { logger } from '@/lib/logger';
+import { PageHeader, ErrorState } from '@/components/common';
 
 interface UserPattern {
   preferredTimeOfDay: 'morning' | 'afternoon' | 'evening' | 'flexible';
@@ -116,7 +118,7 @@ function RoutineRecommendationPage() {
         setError('패턴 분석에 실패했습니다.');
       }
     } catch (error) {
-      console.error('패턴 분석 실패:', error);
+      logger.error('패턴 분석 실패:', error);
       setError('패턴 분석 중 오류가 발생했습니다.');
     } finally {
       setAnalyzing(false);
@@ -178,7 +180,7 @@ function RoutineRecommendationPage() {
         }
       }
     } catch (error) {
-      console.error('루틴 추천 생성 실패:', error);
+      logger.error('루틴 추천 생성 실패:', error);
       setError('루틴 추천 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -260,7 +262,7 @@ function RoutineRecommendationPage() {
             program: program // 수영엔진으로 생성된 실제 프로그램
           };
         } catch (error) {
-          console.error(`세션 ${schedule.dayOfWeek} 프로그램 생성 실패:`, error);
+          logger.error(`세션 ${schedule.dayOfWeek} 프로그램 생성 실패:`, error);
           return schedule; // 오류 시 원본 유지
         }
       })
@@ -299,21 +301,21 @@ function RoutineRecommendationPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Sparkles className="w-8 h-8 text-indigo-600" />
-            AI 기반 개인별 운동 루틴 추천
-          </h1>
-          <p className="mt-2 text-gray-600">
-            당신의 운동 패턴을 분석하여 맞춤형 주간 수영 루틴을 추천해드립니다.
-          </p>
-        </div>
+        <PageHeader
+          title={
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-8 h-8 text-indigo-600" />
+              AI 기반 개인별 운동 루틴 추천
+            </div>
+          }
+          description="당신의 운동 패턴을 분석하여 맞춤형 주간 수영 루틴을 추천해드립니다."
+        />
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600" />
-            <span className="text-red-800">{error}</span>
-          </div>
+          <ErrorState 
+            message={error}
+            className="mb-6"
+          />
         )}
 
         {/* 패턴 분석 섹션 */}
@@ -617,4 +619,6 @@ function RoutineRecommendationPage() {
 }
 
 export default withAuth(RoutineRecommendationPage);
+
+
 

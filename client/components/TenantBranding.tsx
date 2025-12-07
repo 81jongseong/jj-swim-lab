@@ -10,6 +10,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React from 'react';
 import { useTenantSettings } from '@/contexts/TenantSettingsContext';
@@ -49,7 +50,7 @@ export function TenantLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md'
           alt="센터 로고"
           className="w-full h-full object-contain rounded-lg"
           onError={(e) => {
-            console.error('로고 이미지 로드 실패:', logoUrl);
+            logger.error('로고 이미지 로드 실패:', logoUrl);
             // 로드 실패 시 기본 로고로 대체
             (e.target as HTMLImageElement).style.display = 'none';
             const parent = (e.target as HTMLImageElement).parentElement;
@@ -58,7 +59,7 @@ export function TenantLogo({ size = 'md', className = '' }: { size?: 'sm' | 'md'
             }
           }}
           onLoad={() => {
-            console.log('✅ 로고 이미지 로드 성공:', logoUrl);
+            logger.info('✅ 로고 이미지 로드 성공:', logoUrl);
           }}
         />
       </div>

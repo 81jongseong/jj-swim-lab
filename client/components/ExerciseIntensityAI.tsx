@@ -73,6 +73,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useRef } from 'react';
 
@@ -232,7 +233,7 @@ export default function ExerciseIntensityAI({
         analyzeMovement();
       }
     } catch (error) {
-      console.error('카메라 접근 실패:', error);
+      logger.error('카메라 접근 실패:', error);
       // 카메라 없이도 시뮬레이션 가능
       setIsActive(true);
       setIsAnalyzing(true);

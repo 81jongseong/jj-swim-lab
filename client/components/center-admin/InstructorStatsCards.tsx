@@ -1,11 +1,4 @@
-/**
- * 센터 강사 관리 - 통계 카드 컴포넌트
- * 
- * 연동 파일:
- * - client/app/center-admin/instructors/page.tsx
- * - client/components/StatCard.tsx
- */
-
+import { logger } from '@/lib/logger';
 import React from 'react';
 import StatCard from '@/components/StatCard';
 
@@ -41,7 +34,7 @@ export default function InstructorStatsCards({ instructors, instructorStats = {}
   // 총 학생 수 계산 (instructorStats에서 가져옴)
   const totalStudents = Object.values(instructorStats).reduce((sum, stat: any) => sum + (stat.totalStudents || 0), 0);
   
-  console.log('📊 강사 통계 카드 계산:', { 
+  logger.info('📊 강사 통계 카드 계산:', { 
     instructorsCount: instructors.length,
     instructorStatsCount: Object.keys(instructorStats).length,
     averageRating,

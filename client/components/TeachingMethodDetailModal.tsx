@@ -72,9 +72,7 @@
 'use client';
 
 import React from 'react';
-import Modal from './ui/modal';
-import { Badge } from '@/components/ui';
-import Button from './ui/button';
+import { Modal, Badge, Button } from '@/components/ui';
 
 interface TeachingMethod {
   _id: string;

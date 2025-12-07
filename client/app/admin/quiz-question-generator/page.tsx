@@ -6,14 +6,15 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button } from '../../../components/ui';
-import { Card } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui';
 import { Input } from '../../../components/ui';
 import { Badge } from '../../../components/ui';
-import { CardGrid } from '@/components/common';
+import { CardGrid, ConfirmModal, PageHeader } from '@/components/common';
 
 const QUIZ_CATEGORIES = [
   '운동생리학',
@@ -85,6 +86,19 @@ export default function QuizQuestionGeneratorPage() {
   
   // 여러 문제 생성 모드
   const [batchMode, setBatchMode] = useState(false);
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
 
   // localStorage에서 기존 문제 목록 불러오기
   const loadQuestionsFromStorage = (category: string): GeneratedQuestion[] => {
@@ -94,7 +108,7 @@ export default function QuizQuestionGeneratorPage() {
         return JSON.parse(stored);
       }
     } catch (e) {
-      console.warn('저장된 문제 목록 불러오기 실패:', e);
+      logger.warn('저장된 문제 목록 불러오기 실패:', e);
     }
     return [];
   };
@@ -104,7 +118,7 @@ export default function QuizQuestionGeneratorPage() {
     try {
       localStorage.setItem(`quiz-questions-${category}`, JSON.stringify(questions));
     } catch (e) {
-      console.warn('문제 목록 저장 실패:', e);
+      logger.warn('문제 목록 저장 실패:', e);
     }
   };
 
@@ -368,7 +382,7 @@ export default function QuizQuestionGeneratorPage() {
         }
       } catch (e) {
         // JSON 파싱 실패 시 무시
-        console.warn('JSON 파싱 중 오류:', e);
+        logger.warn('JSON 파싱 중 오류:', e);
       }
       
       // sourcePools에서 correctPool과 incorrectPool 추출
@@ -416,7 +430,7 @@ export default function QuizQuestionGeneratorPage() {
       
       setStep('result');
     } catch (error: any) {
-      console.error('문제 생성 실패:', error);
+      logger.error('문제 생성 실패:', error);
       alert(error.message || '문제 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -470,7 +484,7 @@ export default function QuizQuestionGeneratorPage() {
 
       setStep('saved');
     } catch (error: any) {
-      console.error('퀴즈 저장 실패:', error);
+      logger.error('퀴즈 저장 실패:', error);
       alert(error.message || '퀴즈 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -599,12 +613,11 @@ export default function QuizQuestionGeneratorPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">퀴즈 문제 자동 생성</h1>
-        <p className="text-gray-600">
-          정답 Pool과 오답 Pool을 입력하면 문제은행 로직으로 다양한 문제를 자동 생성합니다.
-        </p>
-      </div>
+      <PageHeader
+        title="퀴즈 문제 자동 생성"
+        description="정답 Pool과 오답 Pool을 입력하면 문제은행 로직으로 다양한 문제를 자동 생성합니다."
+        className="mb-6"
+      />
 
       {/* 단계 표시 */}
       <div className="mb-6 flex items-center justify-center space-x-4">
@@ -814,12 +827,20 @@ export default function QuizQuestionGeneratorPage() {
                 <div className="flex space-x-2">
                   <Button
                     onClick={() => {
-                      if (quizInfo.category && confirm(`"${quizInfo.category}" 카테고리의 모든 문제 목록을 초기화하시겠습니까?`)) {
-                        localStorage.removeItem(`quiz-questions-${quizInfo.category}`);
-                        setGeneratedQuestions([]);
-                        setBatchMode(false);
-                        setGeneratedQuestion(null);
-                        alert('목록이 초기화되었습니다.');
+                      if (quizInfo.category) {
+                        setConfirmModal({
+                          isOpen: true,
+                          message: `"${quizInfo.category}" 카테고리의 모든 문제 목록을 초기화하시겠습니까?`,
+                          variant: 'warning',
+                          onConfirm: () => {
+                            localStorage.removeItem(`quiz-questions-${quizInfo.category}`);
+                            setGeneratedQuestions([]);
+                            setBatchMode(false);
+                            setGeneratedQuestion(null);
+                            alert('목록이 초기화되었습니다.');
+                            setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+                          }
+                        });
                       }
                     }}
                     variant="outline"
@@ -881,7 +902,7 @@ export default function QuizQuestionGeneratorPage() {
                         
                         setStep('saved');
                       } catch (error: any) {
-                        console.error('문제 저장 실패:', error);
+                        logger.error('문제 저장 실패:', error);
                         alert(error.message || '문제 저장 중 오류가 발생했습니다.');
                       } finally {
                         setLoading(false);
@@ -1262,6 +1283,18 @@ export default function QuizQuestionGeneratorPage() {
           </div>
         </Card>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }

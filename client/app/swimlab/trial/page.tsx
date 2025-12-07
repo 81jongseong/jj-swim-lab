@@ -41,6 +41,9 @@ import StrokesSelectionSection from '@/components/swimlab/member-variables/Strok
 import TrainingScheduleSection from '@/components/swimlab/member-variables/TrainingScheduleSection';
 import { generateWeeklyPlan, type Input as EngineInput } from '@/lib/swimlab/engine-v31';
 import { generateTimeBasedProgram } from '@/lib/swimlab/engine-v35-time-based';
+import { logger } from '@/lib/logger';
+import { Button, Input, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 
 // 타입 정의
 interface HealthInput {
@@ -492,11 +495,11 @@ export default function HealthInputPage() {
     setIsSaving(true);
     try {
       // TODO: API 호출
-      console.log('건강정보 저장:', healthData);
+      logger.info('건강정보 저장', healthData);
       alert('건강정보가 저장되었습니다! 대시보드에서 프로그램을 생성할 수 있습니다.');
       router.push('/dashboard');
     } catch (error) {
-      console.error('저장 오류:', error);
+      logger.error('저장 오류:', error);
       alert('저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
@@ -508,7 +511,7 @@ export default function HealthInputPage() {
     setIsSaving(true);
     try {
       // 1. 건강정보 저장
-      console.log('🏥 건강정보:', healthData);
+      logger.info('건강정보', healthData);
       
       // 2. CSS 설정 (입력값 또는 레벨 기반 추정)
       const strokeCSS: Record<string, number> = {};
@@ -555,7 +558,7 @@ export default function HealthInputPage() {
       // 70% 강도 (고혈압1기+고지혈증) → 'tired'로 매핑
       // 이렇게 하면 페이스가 +3초 느려지고 휴식이 +5~10초 늘어나서 시간이 늘어남
 
-      console.log('⏰ 운동 설정:', {
+      logger.info('운동 설정', {
         sessionDuration,
         baseIntensity: healthAnalysis.baseIntensity,
         dayCondition,
@@ -590,7 +593,7 @@ export default function HealthInputPage() {
         intensityPercent: healthAnalysis.baseIntensity / 100 // 과학적 강도 조절: 70% → 0.7
       };
       
-      console.log('🏊 엔진 입력:', engineInput);
+      logger.api('엔진 입력', engineInput);
       
       // 4. 🎯 시간 기반 프로그램 생성 (v35 엔진 테스트)
       const generatedProgram = generateTimeBasedProgram({
@@ -608,10 +611,12 @@ export default function HealthInputPage() {
         cssMeasurementPoolLength: healthData.swim_profile.cssMeasurementPoolLength || 25 // 🏊 CSS 측정 풀 길이
       });
       
-      console.log('✅ 오늘의 프로그램 (v35):', generatedProgram);
-      console.log('📊 세트 개수:', generatedProgram?.sets?.length || 0);
-      console.log('📏 총 거리:', generatedProgram?.totalMeters || 0);
-      console.log('⏱️ 총 시간:', generatedProgram?.estimatedMinutes || 0);
+      logger.success('오늘의 프로그램 (v35)', generatedProgram);
+      logger.info('프로그램 통계', {
+        sets: generatedProgram?.sets?.length || 0,
+        totalMeters: generatedProgram?.totalMeters || 0,
+        estimatedMinutes: generatedProgram?.estimatedMinutes || 0
+      });
       
       // 5. 프로그램 데이터 저장
       const programData = {
@@ -634,7 +639,7 @@ export default function HealthInputPage() {
       localStorage.removeItem('guest-daily-program-v33');
       localStorage.removeItem('guest-daily-program-v34');
       
-      console.log('💾 프로그램 저장:', { 
+      logger.info('프로그램 저장', { 
         key: 'guest-daily-program-v35', 
         date: programData.date,
         sets: generatedProgram.sets.length,
@@ -648,11 +653,10 @@ export default function HealthInputPage() {
       alert('🎉 오늘의 맞춤 프로그램이 생성되었습니다!');
       router.push('/swimlab/trial/result');
     } catch (error) {
-      console.error('❌ 프로그램 생성 오류:', error);
-      console.error('❌ 오류 상세:', {
+      logger.error('프로그램 생성 오류:', error);
+      logger.error('오류 상세', {
         message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        error
+        stack: error instanceof Error ? error.stack : undefined
       });
       alert(`프로그램 생성 중 오류가 발생했습니다.\n\n${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -675,40 +679,41 @@ export default function HealthInputPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">나이</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.demographics.age}
-                    onChange={(e) => handleInputChange('demographics.age', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('demographics.age', parseInt(e.target.value) || 0)}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  <Select
                     value={healthData.demographics.sex}
-                    onChange={(e) => handleInputChange('demographics.sex', e.target.value)}
+                    onValueChange={(value) => handleInputChange('demographics.sex', value)}
                   >
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="성별 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">남성</SelectItem>
+                      <SelectItem value="female">여성</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">키 (cm)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.anthropometrics.height_cm}
-                    onChange={(e) => handleInputChange('anthropometrics.height_cm', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('anthropometrics.height_cm', parseInt(e.target.value) || 0)}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">몸무게 (kg)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.anthropometrics.weight_kg}
-                    onChange={(e) => handleInputChange('anthropometrics.weight_kg', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('anthropometrics.weight_kg', parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>
@@ -723,29 +728,26 @@ export default function HealthInputPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">수축기 혈압 (mmHg)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.rest_bp.sbp}
-                    onChange={(e) => handleInputChange('vitals.rest_bp.sbp', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('vitals.rest_bp.sbp', parseInt(e.target.value) || 0)}
                     placeholder="120"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">이완기 혈압 (mmHg)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.rest_bp.dbp}
-                    onChange={(e) => handleInputChange('vitals.rest_bp.dbp', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('vitals.rest_bp.dbp', parseInt(e.target.value) || 0)}
                     placeholder="80"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">공복 혈당 (mg/dL)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.bloodSugar || ''}
                     onChange={(e) => handleInputChange('vitals.bloodSugar', parseInt(e.target.value) || 0)}
                     placeholder="100"
@@ -753,9 +755,8 @@ export default function HealthInputPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">총 콜레스테롤 (mg/dL)</label>
-                  <input
+                  <Input
                     type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     value={healthData.vitals.totalCholesterol || ''}
                     onChange={(e) => handleInputChange('vitals.totalCholesterol', parseInt(e.target.value) || 0)}
                     placeholder="200"
@@ -1262,22 +1263,27 @@ export default function HealthInputPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button
+                <Button
                   onClick={handleGenerateDailyProgram}
                   disabled={isSaving}
-                  className="flex-1 px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold text-lg shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
                 >
                   <span>🏊</span>
                   <span>{isSaving ? '프로그램 생성 중...' : '오늘의 프로그램 생성하기'}</span>
-                </button>
+                </Button>
                 
-                <button
+                <Button
                   onClick={handleSaveOnly}
                   disabled={isSaving}
-                  className="px-6 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                  variant="outline"
+                  size="lg"
+                  className="px-6 py-4"
                 >
                   나중에 하기
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1291,10 +1297,11 @@ export default function HealthInputPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">건강정보 입력</h1>
-        <p className="text-gray-600">나의 건강 상태를 입력하여 맞춤형 수영 프로그램을 받아보세요.</p>
-      </div>
+      <PageHeader
+        title="건강정보 입력"
+        description="나의 건강 상태를 입력하여 맞춤형 수영 프로그램을 받아보세요."
+        className="mb-8"
+      />
 
       {/* 진행 단계 - 업그레이드된 UI */}
       <div className="mb-8">
@@ -1390,4 +1397,6 @@ export default function HealthInputPage() {
     </div>
   );
 }
+
+
 

@@ -1,4 +1,5 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth, type User } from '../../../hooks/useAuth';
@@ -14,31 +15,31 @@ function InstructorCenterLevels() {
 
   useEffect(() => {
     if (user) {
-      console.log('🔍 강사 사용자 정보 전체:', JSON.stringify(user, null, 2));
-      console.log('🔍 사용자 타입:', user.userType);
-      console.log('🔍 instructorInfo:', user.instructorInfo);
+      logger.info('🔍 강사 사용자 정보 전체:', JSON.stringify(user, null, 2));
+      logger.info('🔍 사용자 타입:', user.userType);
+      logger.info('🔍 instructorInfo:', user.instructorInfo);
       
       const centerId = getCenterId(user);
-      console.log('🏢 센터 ID:', centerId);
+      logger.info('🏢 센터 ID:', centerId);
       
       if (centerId) {
         loadCenterLevels(centerId);
       } else {
-        console.error('❌ 센터 ID를 찾을 수 없습니다');
+        logger.error('❌ 센터 ID를 찾을 수 없습니다');
         setIsLoading(false);
       }
     }
   }, [user]);
 
   const getCenterId = (user: User): string | null => {
-    console.log('🔍 getCenterId 호출:', {
+    logger.info('🔍 getCenterId 호출:', {
       userType: user.userType,
       instructorInfo: user.instructorInfo
     });
     
     // instructorInfo 상세 정보 출력
     if (user.instructorInfo) {
-      console.log('🔍 instructorInfo 상세:', {
+      logger.info('🔍 instructorInfo 상세:', {
         assignedCenters: user.instructorInfo.assignedCenters,
         hasAssignedCenters: !!user.instructorInfo.assignedCenters,
         assignedCentersLength: user.instructorInfo.assignedCenters?.length,
@@ -48,31 +49,31 @@ function InstructorCenterLevels() {
     
     if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters?.[0]) {
       const centerId = user.instructorInfo.assignedCenters[0];
-      console.log('✅ instructor 센터 ID:', centerId);
+      logger.info('✅ instructor 센터 ID:', centerId);
       return centerId;
     }
     
     // instructor이지만 assignedCenters가 없는 경우 fallback
     if (user.userType === 'instructor') {
-      console.log('⚠️ instructor이지만 assignedCenters가 없음, 기본값 사용');
+      logger.info('⚠️ instructor이지만 assignedCenters가 없음, 기본값 사용');
       return 'center001'; // 기본 센터 ID 사용
     }
     
-    console.log('❌ 센터 ID를 찾을 수 없음');
+    logger.info('❌ 센터 ID를 찾을 수 없음');
     return null;
   };
 
   const loadCenterLevels = async (centerId: string) => {
     try {
       setIsLoading(true);
-      console.log('🔍 센터 레벨 로드 시작:', centerId);
+      logger.info('🔍 센터 레벨 로드 시작:', centerId);
       
       const data = await getCenterLevels(centerId);
-      console.log('✅ 센터 레벨 로드 성공:', data);
+      logger.info('✅ 센터 레벨 로드 성공:', data);
       
       setCenterLevels(data);
     } catch (error) {
-      console.error('❌ 센터 레벨 로드 실패:', error);
+      logger.error('❌ 센터 레벨 로드 실패:', error);
       
       // 에러가 발생해도 기본 레벨을 설정
       const defaultLevels = [

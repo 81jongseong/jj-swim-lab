@@ -14,8 +14,8 @@
 import React, { ReactNode } from 'react';
 
 interface PageHeaderProps {
-  title: string;
-  description?: string;
+  title: string | ReactNode;
+  description?: string | ReactNode;
   actions?: ReactNode;
   breadcrumbs?: ReactNode;
   className?: string;

@@ -1,8 +1,9 @@
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui';
 import { Button } from '../../components/ui';
 import { Badge } from '../../components/ui';
 import { 
@@ -104,7 +105,7 @@ export default function AIConfigPage() {
         }
       }
     } catch (error) {
-      console.error('AI 설정 로드 오류:', error);
+      logger.error('AI 설정 로드 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ export default function AIConfigPage() {
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (error) {
-      console.error('AI 설정 저장 오류:', error);
+      logger.error('AI 설정 저장 오류:', error);
     } finally {
       setLoading(false);
     }

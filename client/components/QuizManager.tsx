@@ -69,6 +69,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useAuth } from 'hooks/useAuth';
 
@@ -166,7 +167,7 @@ const QuizManager = () => {
         setAttempts(data.data || []);
       }
     } catch (error) {
-      console.error('데이터 로딩 실패:', error);
+      logger.error('데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -192,7 +193,7 @@ const QuizManager = () => {
         }
       }
     } catch (error) {
-      console.error('퀴즈 시작 실패:', error);
+      logger.error('퀴즈 시작 실패:', error);
     }
   };
 
@@ -239,7 +240,7 @@ const QuizManager = () => {
         await loadData(); // 시도 기록 새로고침
       }
     } catch (error) {
-      console.error('퀴즈 제출 실패:', error);
+      logger.error('퀴즈 제출 실패:', error);
     }
   };
 

@@ -1,12 +1,7 @@
-/**
- * 회원 일괄 등록 모달 컴포넌트
- * 연동되는 데이터: User (students), Course
- * 연동되는 파일: users/page.tsx, member-bulk-import.ts (API)
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState } from 'react';
 import { X, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 
 interface MemberBulkImportModalProps {
   isOpen: boolean;
@@ -53,7 +48,7 @@ export default function MemberBulkImportModal({
         document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('템플릿 다운로드 오류:', error);
+      logger.error('템플릿 다운로드 오류:', error);
       alert('템플릿 다운로드에 실패했습니다.');
     }
   };
@@ -93,7 +88,7 @@ export default function MemberBulkImportModal({
         alert(`업로드 실패: ${errorData.message}`);
       }
     } catch (error) {
-      console.error('파일 업로드 오류:', error);
+      logger.error('파일 업로드 오류:', error);
       alert('파일 업로드 중 오류가 발생했습니다.');
     } finally {
       setUploading(false);

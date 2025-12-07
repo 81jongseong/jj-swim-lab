@@ -70,6 +70,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 
@@ -95,7 +96,7 @@ export default function PWAInstallPrompt() {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setShowInstallPrompt(false);
-      console.log('🎉 PWA가 성공적으로 설치되었습니다!');
+      logger.info('🎉 PWA가 성공적으로 설치되었습니다!');
     };
 
     // 이미 설치되어 있는지 확인
@@ -132,13 +133,13 @@ export default function PWAInstallPrompt() {
       const { outcome } = await deferredPrompt.userChoice;
       
       if (outcome === 'accepted') {
-        console.log('✅ 사용자가 PWA 설치를 수락했습니다');
+        logger.info('✅ 사용자가 PWA 설치를 수락했습니다');
         setShowInstallPrompt(false);
       } else {
-        console.log('❌ 사용자가 PWA 설치를 거부했습니다');
+        logger.info('❌ 사용자가 PWA 설치를 거부했습니다');
       }
     } catch (error) {
-      console.error('PWA 설치 중 오류 발생:', error);
+      logger.error('PWA 설치 중 오류 발생:', error);
     }
 
     // 프롬프트 초기화

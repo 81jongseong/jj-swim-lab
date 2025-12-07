@@ -1,4 +1,4 @@
-import { UserType } from '../hooks/useAuth';
+import type { UserType } from '../types/user';
 
 export interface MenuItem {
     href: string;

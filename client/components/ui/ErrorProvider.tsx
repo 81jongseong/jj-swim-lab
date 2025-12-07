@@ -70,7 +70,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useErrorHandler, ErrorInfo, ErrorContext as ErrorContextFromHook } from '@/hooks/useErrorHandler';
-import ErrorToast from './errortoast';
+import ErrorToast from './ErrorToast';
+import { logger } from '@/lib/logger';
 
 interface ErrorContextType {
   handleError: (error: Error | string, context?: ErrorContextFromHook) => void;
@@ -154,7 +155,7 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
     try {
       await errorHandler.retryError(errorId, retryFn);
     } catch (retryError) {
-      console.error('재시도 실패:', retryError);
+      logger.error('재시도 실패:', retryError);
     }
   };
 
@@ -188,3 +189,4 @@ export const ErrorProvider: React.FC<ErrorProviderProps> = ({
 };
 
 export default ErrorProvider;
+

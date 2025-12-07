@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { TrendingUp, Target, Calendar, Award, BarChart3 } from 'lucide-react';
 import withAuth from '@/components/withAuth';
+import { logger } from '@/lib/logger';
+import { LoadingState, PageHeader } from '@/components/common';
 
 interface Progress {
   _id: string;
@@ -59,7 +61,7 @@ function StudentProgress() {
         setProgress(progressData);
       }
     } catch (error) {
-      console.error('진도 로드 실패:', error);
+      logger.error('진도 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -99,20 +101,17 @@ function StudentProgress() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2">진도를 불러오는 중...</span>
+        <LoadingState message="진도를 불러오는 중..." size="lg" />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          진도 관리
-        </h1>
-        <p className="text-gray-600">나의 수영 학습 진도와 성취를 확인하세요</p>
-      </div>
+      <PageHeader
+        title="진도 관리"
+        description="나의 수영 학습 진도와 성취를 확인하세요"
+      />
 
       {/* 전체 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -1,12 +1,7 @@
-/**
- * 과정 배정 모달 컴포넌트
- * 연동되는 데이터: 회원 정보, 강습 과정 목록, 과정 배정 API
- * 연동되는 파일: center-admin/users/page.tsx
- */
-
+import { logger } from '@/lib/logger';
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui';
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui';
 
 interface Course {
   _id: string;
@@ -62,7 +57,7 @@ export default function CourseAssignmentModal({
       setSelectedCourse('');
       setAssignmentMemo('');
     } catch (error) {
-      console.error('과정 배정 오류:', error);
+      logger.error('과정 배정 오류:', error);
     }
   };
 

@@ -6,12 +6,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth, type User } from '../../../hooks/useAuth';
 import { getCenterLevels, updateCenterLevels, type CenterLevel } from '../../../lib/api/center-level';
 import { Plus, Trash2, Save, X, GripVertical } from 'lucide-react';
 import withAuth from '../../../components/withAuth';
+import { LoadingState, PageHeader } from '@/components/common';
 
 function StudentLevelsManagement() {
   const { user } = useAuth();
@@ -23,25 +25,25 @@ function StudentLevelsManagement() {
 
   useEffect(() => {
     if (user) {
-      console.log('🔍 사용자 정보 전체:', JSON.stringify(user, null, 2));
-      console.log('🔍 사용자 타입:', user.userType);
-      console.log('🔍 centerAdminInfo:', user.centerAdminInfo);
-      console.log('🔍 instructorInfo:', user.instructorInfo);
+      logger.info('🔍 사용자 정보 전체:', JSON.stringify(user, null, 2));
+      logger.info('🔍 사용자 타입:', user.userType);
+      logger.info('🔍 centerAdminInfo:', user.centerAdminInfo);
+      logger.info('🔍 instructorInfo:', user.instructorInfo);
       
       const centerId = getCenterId(user);
-      console.log('🏢 센터 ID:', centerId);
+      logger.info('🏢 센터 ID:', centerId);
       
       if (centerId) {
         loadCenterLevels(centerId);
       } else {
-        console.error('❌ 센터 ID를 찾을 수 없습니다');
+        logger.error('❌ 센터 ID를 찾을 수 없습니다');
         setIsLoading(false);
       }
     }
   }, [user]);
 
   const getCenterId = (user: User): string | null => {
-    console.log('🔍 getCenterId 호출:', {
+    logger.info('🔍 getCenterId 호출:', {
       userType: user.userType,
       centerAdminInfo: user.centerAdminInfo,
       instructorInfo: user.instructorInfo
@@ -49,13 +51,13 @@ function StudentLevelsManagement() {
     
     // superAdmin의 경우 모든 센터를 관리할 수 있도록 기본 센터 ID 반환
     if (user.userType === 'superAdmin') {
-      console.log('✅ superAdmin: 모든 센터 관리 권한');
+      logger.info('✅ superAdmin: 모든 센터 관리 권한');
       return 'all-centers'; // 특별한 식별자
     }
     
     // centerAdminInfo 상세 정보 출력
     if (user.centerAdminInfo) {
-      console.log('🔍 centerAdminInfo 상세:', {
+      logger.info('🔍 centerAdminInfo 상세:', {
         managedCenters: user.centerAdminInfo.managedCenters,
         hasManagedCenters: !!user.centerAdminInfo.managedCenters,
         managedCentersLength: user.centerAdminInfo.managedCenters?.length,
@@ -65,7 +67,7 @@ function StudentLevelsManagement() {
     
     // instructorInfo 상세 정보 출력
     if (user.instructorInfo) {
-      console.log('🔍 instructorInfo 상세:', {
+      logger.info('🔍 instructorInfo 상세:', {
         assignedCenters: user.instructorInfo.assignedCenters,
         hasAssignedCenters: !!user.instructorInfo.assignedCenters?.length
       });
@@ -73,28 +75,28 @@ function StudentLevelsManagement() {
     
     if (user.userType === 'centerAdmin' && user.centerAdminInfo?.managedCenters?.length) {
       const centerId = user.centerAdminInfo.managedCenters[0];
-      console.log('✅ centerAdmin에서 센터 ID 찾음:', centerId);
+      logger.info('✅ centerAdmin에서 센터 ID 찾음:', centerId);
       return centerId;
     }
     
     if (user.userType === 'instructor' && user.instructorInfo?.assignedCenters?.length) {
       const centerId = user.instructorInfo.assignedCenters[0];
-      console.log('✅ instructor에서 센터 ID 찾음:', centerId);
+      logger.info('✅ instructor에서 센터 ID 찾음:', centerId);
       return centerId;
     }
     
-    console.log('❌ 센터 ID를 찾을 수 없음');
+    logger.info('❌ 센터 ID를 찾을 수 없음');
     return null;
   };
 
   const loadCenterLevels = async (centerId: string) => {
     try {
-      console.log('📡 센터 레벨 로드 시작:', centerId);
+      logger.info('📡 센터 레벨 로드 시작:', centerId);
       setIsLoading(true);
       
       // superAdmin의 경우 모든 센터를 관리할 수 있도록 기본 레벨 설정
       if (centerId === 'all-centers') {
-        console.log('📡 superAdmin: 모든 센터용 기본 레벨 설정');
+        logger.info('📡 superAdmin: 모든 센터용 기본 레벨 설정');
         const defaultLevels: CenterLevel['levels'] = [
           { name: '입문', description: '수영을 처음 시작하는 단계', order: 1 },
           { name: '초급', description: '기본적인 수영 기술을 익히는 단계', order: 2 },
@@ -114,13 +116,13 @@ function StudentLevelsManagement() {
       }
       
       const data = await getCenterLevels(centerId);
-      console.log('📡 센터 레벨 로드 결과:', data);
+      logger.info('📡 센터 레벨 로드 결과:', data);
       
       if (data) {
         setCenterLevels(data);
         setEditingLevels([...data.levels]);
       } else {
-        console.log('📡 센터 레벨이 없어서 기본값 설정');
+        logger.info('📡 센터 레벨이 없어서 기본값 설정');
         const defaultLevels: CenterLevel['levels'] = [
           { name: '입문', description: '수영을 처음 시작하는 단계', order: 1 },
           { name: '초급', description: '기본적인 수영 기술을 익히는 단계', order: 2 },
@@ -137,7 +139,7 @@ function StudentLevelsManagement() {
         setEditingLevels([...defaultLevels]);
       }
     } catch (error) {
-      console.error('❌ 센터 레벨 로드 실패:', error);
+      logger.error('❌ 센터 레벨 로드 실패:', error);
     } finally {
       setIsLoading(false);
     }
@@ -148,11 +150,11 @@ function StudentLevelsManagement() {
     
     try {
       setIsSaving(true);
-      console.log('💾 센터 레벨 저장 시작:', editingLevels);
+      logger.info('💾 센터 레벨 저장 시작:', editingLevels);
       
       // superAdmin의 경우 모든 센터에 적용되는 기본 레벨로 처리
       if (centerLevels.centerId === 'all-centers') {
-        console.log('💾 superAdmin: 모든 센터용 기본 레벨 저장');
+        logger.info('💾 superAdmin: 모든 센터용 기본 레벨 저장');
         // 실제로는 모든 센터에 이 레벨을 적용하는 로직이 필요하지만,
         // 현재는 로컬 상태만 업데이트
         setCenterLevels({
@@ -161,7 +163,7 @@ function StudentLevelsManagement() {
           updatedAt: new Date().toISOString()
         } as any);
         setIsEditing(false);
-        console.log('✅ superAdmin 센터 레벨 저장 완료');
+        logger.info('✅ superAdmin 센터 레벨 저장 완료');
         return;
       }
       
@@ -174,9 +176,9 @@ function StudentLevelsManagement() {
       } as any);
       
       setIsEditing(false);
-      console.log('✅ 센터 레벨 저장 완료');
+      logger.info('✅ 센터 레벨 저장 완료');
     } catch (error) {
-      console.error('❌ 센터 레벨 저장 실패:', error);
+      logger.error('❌ 센터 레벨 저장 실패:', error);
     } finally {
       setIsSaving(false);
     }
@@ -239,10 +241,7 @@ function StudentLevelsManagement() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">센터 레벨을 불러오는 중...</p>
-        </div>
+        <LoadingState message="센터 레벨을 불러오는 중..." size="lg" />
       </div>
     );
   }
@@ -250,25 +249,24 @@ function StudentLevelsManagement() {
   if (!centerLevels) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">센터 레벨 관리</h1>
-          <p className="text-gray-600">센터 정보를 불러올 수 없습니다.</p>
-        </div>
+        <PageHeader
+          title="센터 레벨 관리"
+          description="센터 정보를 불러올 수 없습니다."
+        />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">센터 레벨 관리</h1>
-        <p className="text-gray-600 mt-2">
-          {centerLevels.centerId === 'all-centers' 
+      <PageHeader
+        title="센터 레벨 관리"
+        description={
+          centerLevels.centerId === 'all-centers' 
             ? '전체 센터 학생 수영 레벨 구성 및 관리 (최고관리자)'
             : '센터별 학생 수영 레벨 구성 및 관리'
-          }
-        </p>
-      </div>
+        }
+      />
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">

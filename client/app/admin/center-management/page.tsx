@@ -76,6 +76,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
@@ -83,7 +84,8 @@ import apiClient from '../../../utils/api';
 import UnifiedRegionSelector from '@/components/common/UnifiedRegionSelector';
 import RegionSelectorWrapper from '@/components/common/RegionSelectorWrapper';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { CardGrid, LoadingState, PageHeader, ErrorState, Modal } from '@/components/common';
+import { Button, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui';
 
 interface Center {
   _id: string;
@@ -255,10 +257,10 @@ export default function CenterManagement() {
         if (response?.success && Array.isArray(response.data)) {
           setCenterAdmins(response.data);
         } else {
-          console.warn('센터 관리자 목록을 불러오지 못했습니다.', response?.message);
+          logger.warn('센터 관리자 목록을 불러오지 못했습니다.', response?.message);
         }
       } catch (fetchError) {
-        console.error('센터 관리자 목록 조회 실패:', fetchError);
+        logger.error('센터 관리자 목록 조회 실패:', fetchError);
       }
     };
 
@@ -289,12 +291,15 @@ export default function CenterManagement() {
         };
         message?: string;
       }>(`/api/center-management?${params}`).catch(error => {
-        console.warn('센터 목록 API 호출 실패:', error);
+        logger.error('센터 목록 API 호출 실패:', error);
+        setError('센터 목록을 불러오는데 실패했습니다.');
         return { success: false, data: { centers: [], pagination: { total: 0 } } };
       });
       
-      if ((response as any).success) {
-        let filteredCenters = (response as any).data.centers;
+      logger.info('센터 목록 API 응답:', { success: (response as any).success, hasData: !!(response as any).data });
+      
+      if ((response as any).success && (response as any).data) {
+        let filteredCenters = (response as any).data.centers || [];
         
         // 클라이언트 측 지역 필터링 (서버에서 처리되지 않은 경우를 대비)
         if (selectedRegions.size > 0 || selectedDistricts.length > 0 || selectedCenters.length > 0) {
@@ -351,7 +356,7 @@ export default function CenterManagement() {
         setError((response as any).message || '센터 목록을 불러오는데 실패했습니다.');
       }
     } catch (error) {
-      console.error('센터 목록 로딩 오류:', error);
+      logger.error('센터 목록 로딩 오류:', error);
       setError('센터 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -363,12 +368,20 @@ export default function CenterManagement() {
       const response = await apiClient.get<{
         success: boolean;
         data?: CenterStats;
-      }>('/api/center-management/stats/overview');
-      if ((response as any).success) {
+      }>('/api/center-management/stats/overview').catch(error => {
+        logger.error('센터 통계 API 호출 실패:', error);
+        return { success: false };
+      });
+      
+      logger.info('센터 통계 API 응답:', { success: (response as any).success, hasData: !!(response as any).data });
+      
+      if ((response as any).success && (response as any).data) {
         setStats((response as any).data);
+      } else {
+        logger.warn('센터 통계 데이터가 없습니다:', response);
       }
     } catch (error) {
-      console.error('센터 통계 로딩 오류:', error);
+      logger.error('센터 통계 로딩 오류:', error);
     }
   };
 
@@ -387,7 +400,7 @@ export default function CenterManagement() {
         alert(response.message || '상태 변경에 실패했습니다.');
       }
     } catch (error) {
-      console.error('상태 변경 오류:', error);
+      logger.error('상태 변경 오류:', error);
       alert('상태 변경 중 오류가 발생했습니다.');
     }
   };
@@ -465,7 +478,7 @@ export default function CenterManagement() {
         alert(response?.message || '관리자 할당에 실패했습니다.');
       }
     } catch (assignError) {
-      console.error('센터 관리자 할당 실패:', assignError);
+      logger.error('센터 관리자 할당 실패:', assignError);
       alert('관리자 할당 중 오류가 발생했습니다.');
     }
   };
@@ -473,21 +486,21 @@ export default function CenterManagement() {
   if (loading && centers.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <LoadingState message="로딩 중..." size="lg" />
       </div>
     );
   }
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">🏢 센터 관리</h1>
-        <p className="text-gray-600">전체 센터의 상태를 관리하고 모니터링합니다.</p>
-      </div>
+      <PageHeader
+        title="🏢 센터 관리"
+        description="전체 센터의 상태를 관리하고 모니터링합니다."
+      />
 
       {/* 통계 카드 */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <CardGrid gap={6} className="mb-8">
           <StatCard
             title="전체 센터"
             value={stats.centers.total}
@@ -523,7 +536,7 @@ export default function CenterManagement() {
             subtitle="신규 등록"
             href="/admin/approvals"
           />
-        </div>
+        </CardGrid>
       )}
 
       {/* 지역 필터 - RegionSelectorWrapper 적용 */}
@@ -685,22 +698,12 @@ export default function CenterManagement() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">센터 목록</h2>
         
         {error && (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <div className="text-red-600">
-              <svg className="mx-auto h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <p className="text-lg font-medium mb-2">데이터를 불러오는데 실패했습니다</p>
-              <p className="text-sm mb-4">{error}</p>
-              <Button
-                onClick={loadCenters}
-                variant="danger"
-                size="md"
-              >
-                🔄 다시 시도
-              </Button>
-            </div>
-          </div>
+          <ErrorState 
+            message={`데이터를 불러오는데 실패했습니다: ${error}`}
+            onRetry={loadCenters}
+            retryText="다시 시도"
+            className="mb-4"
+          />
         )}
 
         {centers.length === 0 && !loading && !error ? (
@@ -714,7 +717,7 @@ export default function CenterManagement() {
             </div>
           </div>
         ) : !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CardGrid>
             {centers.map((center) => (
               <div 
                 key={center._id} 
@@ -890,7 +893,7 @@ export default function CenterManagement() {
                             const reason = prompt(`센터 등급을 ${getCenterGradeKorean(e.target.value)}로 변경하는 이유를 입력하세요:`);
                             if (reason) {
                               // TODO: 센터 등급 변경 API 호출
-                              console.log(`센터 등급 변경: ${center._id} → ${e.target.value}, 사유: ${reason}`);
+                              logger.info(`센터 등급 변경: ${center._id} → ${e.target.value}, 사유: ${reason}`);
                               alert(`센터 등급이 ${getCenterGradeKorean(e.target.value)}로 변경되었습니다.`);
                             }
                             e.target.value = '';
@@ -909,7 +912,7 @@ export default function CenterManagement() {
                 </div>
               </div>
             ))}
-          </div>
+          </CardGrid>
         )}
 
         {/* 페이지네이션 */}
@@ -943,203 +946,179 @@ export default function CenterManagement() {
       </div>
 
       {/* 센터 상세 모달 */}
-      {showModal && selectedCenter && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">{selectedCenter.name}</h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <span className="text-2xl">&times;</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 기본 정보 */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">센터명</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">설명</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.description}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">상태</label>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedCenter.status)}`}>
-                        {getStatusKorean(selectedCenter.status)}
-                      </span>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">센터 등급</label>
-                      <div className={`inline-flex px-3 py-2 text-sm font-bold rounded-lg border-2 ${getCenterGradeColor(selectedCenter.grade)}`}>
-                        {getCenterGradeKorean(selectedCenter.grade)}
-                      </div>
-                    </div>
+      <Modal
+        isOpen={showModal && !!selectedCenter}
+        onClose={() => setShowModal(false)}
+        title={selectedCenter?.name || '센터 상세 정보'}
+        maxWidth="4xl"
+      >
+        {selectedCenter ? (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 기본 정보 */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">센터명</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.name}</p>
                   </div>
-                </div>
-
-                {/* 연락처 정보 */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">이메일</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.contact.email}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">전화번호</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.contact.phone}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">주소</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedCenter.address.address1} {selectedCenter.address.address2 || ''}
-                        <br />
-                        {selectedCenter.address.city} {selectedCenter.address.province} {selectedCenter.address.postalCode}
-                      </p>
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">설명</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.description || '-'}</p>
                   </div>
-                </div>
-
-                {/* 시설 정보 */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">시설 정보</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">수영장 크기</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedCenter.poolInfo.size.length}m × {selectedCenter.poolInfo.size.width}m × {selectedCenter.poolInfo.size.depth}m
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">수용 인원</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.poolInfo.capacity}명</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">주차 가능</label>
-                      <p className="text-sm text-gray-900">{selectedCenter.parkingAvailable ? '가능' : '불가능'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">시설</label>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedCenter.facilities.map((facility, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {facility}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">상태</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedCenter.status)}`}>
+                      {getStatusKorean(selectedCenter.status)}
+                    </span>
                   </div>
-                </div>
-
-                {/* 운영 시간 */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">운영 시간</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">평일</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedCenter.operatingHours.weekdays.open} - {selectedCenter.operatingHours.weekdays.close}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">주말</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedCenter.operatingHours.weekends.open} - {selectedCenter.operatingHours.weekends.close}
-                      </p>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">센터 등급</label>
+                    <div className={`inline-flex px-3 py-2 text-sm font-bold rounded-lg border-2 ${getCenterGradeColor(selectedCenter.grade)}`}>
+                      {getCenterGradeKorean(selectedCenter.grade)}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  닫기
-                </button>
+              {/* 연락처 정보 */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">이메일</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.contact?.email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">전화번호</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.contact?.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">주소</label>
+                    <p className="text-sm text-gray-900">
+                      {selectedCenter.address?.address1 || ''} {selectedCenter.address?.address2 || ''}
+                      <br />
+                      {selectedCenter.address?.city || ''} {selectedCenter.address?.province || ''} {selectedCenter.address?.postalCode || ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 시설 정보 */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">시설 정보</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">수영장 크기</label>
+                    <p className="text-sm text-gray-900">
+                      {selectedCenter.poolInfo?.size?.length || '-'}m × {selectedCenter.poolInfo?.size?.width || '-'}m × {selectedCenter.poolInfo?.size?.depth || '-'}m
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">수용 인원</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.poolInfo?.capacity || '-'}명</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">주차 가능</label>
+                    <p className="text-sm text-gray-900">{selectedCenter.parkingAvailable ? '가능' : '불가능'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">시설</label>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCenter.facilities?.map((facility, index) => (
+                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                          {facility}
+                        </span>
+                      )) || <span className="text-sm text-gray-500">-</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 운영 시간 */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">운영 시간</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">평일</label>
+                    <p className="text-sm text-gray-900">
+                      {selectedCenter.operatingHours?.weekdays?.open || '-'} - {selectedCenter.operatingHours?.weekdays?.close || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">주말</label>
+                    <p className="text-sm text-gray-900">
+                      {selectedCenter.operatingHours?.weekends?.open || '-'} - {selectedCenter.operatingHours?.weekends?.close || '-'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
+      </Modal>
 
       {/* 관리자 할당 모달 */}
-      {showAssignAdminModal && selectedCenter && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900">
-                  센터 관리자 할당
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowAssignAdminModal(false);
-                    setSelectedAdminId('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <span className="text-2xl">&times;</span>
-                </button>
-              </div>
+      <Modal
+        isOpen={showAssignAdminModal && !!selectedCenter}
+        onClose={() => {
+          setShowAssignAdminModal(false);
+          setSelectedAdminId('');
+        }}
+        title="센터 관리자 할당"
+        maxWidth="md"
+      >
+        <div className="p-6">
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">
+              <strong>{selectedCenter?.name}</strong> 센터에 관리자를 할당합니다.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              센터 관리자 선택
+            </label>
+            <Select
+              value={selectedAdminId}
+              onValueChange={(value) => setSelectedAdminId(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="-- 관리자 선택 --" />
+              </SelectTrigger>
+              <SelectContent>
+                {centerAdmins.map((admin) => (
+                  <SelectItem key={admin._id} value={admin._id}>
+                    {admin.name} ({admin.email}) - 관리 센터: {admin.managedCentersCount}개
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {centerAdmins.length === 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                등록된 센터 관리자가 없습니다. 새 관리자 계정을 먼저 생성해주세요.
+              </p>
+            )}
+          </div>
 
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>{selectedCenter.name}</strong> 센터에 관리자를 할당합니다.
-                </p>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  센터 관리자 선택
-                </label>
-                <select
-                  value={selectedAdminId}
-                  onChange={(e) => setSelectedAdminId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- 관리자 선택 --</option>
-                  {centerAdmins.map((admin) => (
-                    <option key={admin._id} value={admin._id}>
-                      {admin.name} ({admin.email}) - 관리 센터: {admin.managedCentersCount}개
-                    </option>
-                  ))}
-                </select>
-                {centerAdmins.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    등록된 센터 관리자가 없습니다. 새 관리자 계정을 먼저 생성해주세요.
-                  </p>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowAssignAdminModal(false);
-                    setSelectedAdminId('');
-                  }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleAssignAdmin}
-                  disabled={!selectedAdminId}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  할당하기
-                </button>
-              </div>
-            </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              onClick={() => {
+                setShowAssignAdminModal(false);
+                setSelectedAdminId('');
+              }}
+              variant="outline"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleAssignAdmin}
+              disabled={!selectedAdminId}
+              variant="primary"
+            >
+              할당하기
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

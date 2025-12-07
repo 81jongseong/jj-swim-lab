@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { User, MapPin, Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { Button } from '../Button';
+import { Button } from '@/components/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui';
 
 interface Booking {

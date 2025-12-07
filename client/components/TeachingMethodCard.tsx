@@ -15,7 +15,7 @@
 'use client';
 
 import React from 'react';
-import Button from './Button';
+import { Button } from '@/components/ui';
 
 interface TeachingMethod {
   _id: string;

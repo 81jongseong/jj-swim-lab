@@ -19,11 +19,13 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { CardGrid, LoadingState, PageHeader, ErrorState } from '@/components/common';
+import { Button } from '@/components/ui';
 import { Card, Badge, Progress } from '../../../components/ui';
 import { 
   CheckCircle, 
@@ -89,6 +91,7 @@ export default function InstructorChecklistPage() {
   // 개별 체크리스트 관련 상태
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterLevel, setFilterLevel] = useState<string>('all');
@@ -112,8 +115,12 @@ export default function InstructorChecklistPage() {
   const loadChecklists = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        setError('인증 토큰이 없습니다.');
+        return;
+      }
 
       const response = await fetch('http://localhost:5000/api/checklist', {
         headers: {
@@ -122,12 +129,15 @@ export default function InstructorChecklistPage() {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setChecklists(data.checklists || []);
+      if (!response.ok) {
+        throw new Error('체크리스트를 불러오는데 실패했습니다.');
       }
-    } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
+
+      const data = await response.json();
+      setChecklists(data.checklists || []);
+    } catch (err: any) {
+      logger.error('체크리스트 로드 실패:', err);
+      setError(err.message || '체크리스트를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -146,7 +156,7 @@ export default function InstructorChecklistPage() {
         setIsPrivateLesson(classList[0].type === 'individual');
       }
     } catch (error) {
-      console.error('반 목록 로드 실패:', error);
+      logger.error('반 목록 로드 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -160,7 +170,7 @@ export default function InstructorChecklistPage() {
       const checklist = await checklistApi.getClassChecklist(selectedClassId);
       setClassChecklist(checklist);
     } catch (error) {
-      console.error('체크리스트 로드 실패:', error);
+      logger.error('체크리스트 로드 실패:', error);
       setClassChecklist(null);
     } finally {
       setChecklistLoading(false);
@@ -175,7 +185,7 @@ export default function InstructorChecklistPage() {
       const progress = await checklistApi.getStudentProgress(selectedClassId);
       setStudentProgress(progress);
     } catch (error) {
-      console.error('학생 진행도 로드 실패:', error);
+      logger.error('학생 진행도 로드 실패:', error);
       setStudentProgress([]);
     } finally {
       setProgressLoading(false);
@@ -226,7 +236,7 @@ export default function InstructorChecklistPage() {
       setShowCreateModal(false);
       alert('체크리스트가 생성되었습니다.');
     } catch (error: any) {
-      console.error('체크리스트 생성 실패:', error);
+      logger.error('체크리스트 생성 실패:', error);
       alert(error.message || '체크리스트 생성에 실패했습니다.');
     } finally {
       setChecklistLoading(false);
@@ -256,7 +266,7 @@ export default function InstructorChecklistPage() {
         await loadChecklists();
       }
     } catch (error) {
-      console.error('체크리스트 아이템 업데이트 실패:', error);
+      logger.error('체크리스트 아이템 업데이트 실패:', error);
     } finally {
       setUpdatingItem(null);
     }
@@ -297,7 +307,24 @@ export default function InstructorChecklistPage() {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">로딩 중...</div>
+          <LoadingState message="로딩 중..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              loadChecklists();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -306,18 +333,20 @@ export default function InstructorChecklistPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">체크리스트 관리</h1>
-          {activeTab === 'individual' && (
-            <Button
-              onClick={() => window.location.href = '/instructor/students'}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              새 체크리스트 생성
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          title="체크리스트 관리"
+          actions={
+            activeTab === 'individual' ? (
+              <Button
+                onClick={() => window.location.href = '/instructor/students'}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                새 체크리스트 생성
+              </Button>
+            ) : null
+          }
+        />
 
         {/* 탭 네비게이션 */}
         <div className="bg-white rounded-lg shadow mb-6">
@@ -364,7 +393,7 @@ export default function InstructorChecklistPage() {
         {activeTab === 'individual' && (
           <>
         {/* 통계 카드 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <CardGrid gap={6} className="mb-6">
           <StatCard
             title="전체 체크리스트"
             value={checklists.length.toString()}
@@ -397,7 +426,7 @@ export default function InstructorChecklistPage() {
             subtitle="일시정지 상태"
             change={{ value: 0, type: 'increase' }}
           />
-        </div>
+        </CardGrid>
 
         {/* 필터 및 검색 */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -843,7 +872,14 @@ export default function InstructorChecklistPage() {
                 <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-semibold text-gray-900">체크리스트 생성</h3>
-                    <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                    <Button 
+                      onClick={() => setShowCreateModal(false)} 
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </Button>
                   </div>
                   <div className="space-y-4">
                     {!isPrivateLesson && (

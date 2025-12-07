@@ -17,11 +17,12 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
-import { Button } from '../../../components/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui';
+import { Button } from '@/components/ui';
 import { Building2, User, MapPin, Phone, Mail, FileText, Clock, Car, Waves } from 'lucide-react';
 
 // Daum 우편번호 서비스 타입 선언
@@ -298,11 +299,11 @@ export default function SignupCenterAdminPage() {
       // 실제로는 서버에서 이메일 발송
       // 여기서는 콘솔에 출력 (테스트용)
       if (process.env.NODE_ENV === 'development') {
-        console.log(`인증 코드: ${code}`);
+        logger.info(`인증 코드: ${code}`);
       }
       alert(`인증 코드가 ${formData.representativeEmail}로 발송되었습니다.\n(테스트: ${code})`);
     } catch (error) {
-      console.error('이메일 발송 오류:', error);
+      logger.error('이메일 발송 오류:', error);
       alert('이메일 발송에 실패했습니다.');
     }
   };
@@ -550,7 +551,7 @@ export default function SignupCenterAdminPage() {
       };
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('📤 센터 등록 신청 데이터:', requestData);
+        logger.info('📤 센터 등록 신청 데이터:', requestData);
       }
 
       const response = await fetch('http://localhost:5000/api/center-registrations', {
@@ -564,17 +565,17 @@ export default function SignupCenterAdminPage() {
       if (response.ok) {
         const result = await response.json();
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ 센터 등록 성공:', result);
+          logger.info('✅ 센터 등록 성공:', result);
         }
         alert('센터 등록 신청이 완료되었습니다. 관리자 승인 후 이용하실 수 있습니다.');
         router.push('/');
       } else {
         const errorData = await response.json();
-        console.error('❌ 센터 등록 실패:', errorData);
+        logger.error('❌ 센터 등록 실패:', errorData);
         alert(`센터 등록 신청 실패:\n${errorData.message || '알 수 없는 오류'}\n\n콘솔(F12)을 확인해주세요.`);
       }
     } catch (error) {
-      console.error('센터 등록 신청 오류:', error);
+      logger.error('센터 등록 신청 오류:', error);
       alert('센터 등록 신청 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

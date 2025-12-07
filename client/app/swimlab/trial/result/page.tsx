@@ -17,6 +17,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, Target } from 'lucide-react';
 import { canEditProgram, MEMBERSHIP_CONFIGS } from '@/types/membership';
+import { logger } from '@/lib/logger';
+import { LoadingState, ErrorState, PageHeader } from '@/components/common';
 
 export default function GuestProgramsPage() {
   const router = useRouter();
@@ -40,9 +42,9 @@ export default function GuestProgramsPage() {
     });
     if (savedProgram) {
       const parsed = JSON.parse(savedProgram);
-      console.log('📦 로드된 프로그램:', parsed);
-      console.log('🔍 엔진 출력 존재?:', !!parsed.engineOutput);
-      console.log('🔍 엔진 출력 구조:', parsed.engineOutput);
+      logger.debug('로드된 프로그램', parsed);
+      logger.debug('엔진 출력 존재?', !!parsed.engineOutput);
+      logger.debug('엔진 출력 구조', parsed.engineOutput);
       setProgram(parsed);
     }
     setLoading(false);
@@ -51,10 +53,7 @@ export default function GuestProgramsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">프로그램 로딩 중...</p>
-        </div>
+        <LoadingState message="프로그램 로딩 중..." size="lg" />
       </div>
     );
   }
@@ -92,8 +91,10 @@ export default function GuestProgramsPage() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             뒤로 가기
           </button>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">오늘의 맞춤 프로그램</h1>
-          <p className="text-gray-600">나의 건강 상태에 맞춘 하루 운동 프로그램입니다</p>
+          <PageHeader
+            title="오늘의 맞춤 프로그램"
+            description="나의 건강 상태에 맞춘 하루 운동 프로그램입니다"
+          />
         </div>
 
           {/* 프로그램 정보 */}

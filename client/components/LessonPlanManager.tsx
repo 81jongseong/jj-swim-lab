@@ -71,6 +71,7 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useAuth } from 'hooks/useAuth';
 
@@ -209,7 +210,7 @@ const LessonPlanManager = () => {
         setLessonPlans(data.data || []);
       }
     } catch (error) {
-      console.error('강습 계획서 로딩 실패:', error);
+      logger.error('강습 계획서 로딩 실패:', error);
     } finally {
       setLoading(false);
     }
@@ -267,7 +268,7 @@ const LessonPlanManager = () => {
         resetForm();
       }
     } catch (error) {
-      console.error('강습 계획서 저장 실패:', error);
+      logger.error('강습 계획서 저장 실패:', error);
     }
   };
 
@@ -339,7 +340,7 @@ const LessonPlanManager = () => {
         await loadLessonPlans();
       }
     } catch (error) {
-      console.error('강습 계획서 삭제 실패:', error);
+      logger.error('강습 계획서 삭제 실패:', error);
     }
   };
 

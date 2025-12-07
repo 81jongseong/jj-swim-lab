@@ -1,16 +1,4 @@
-/**
- * 🗺️ H3 셀 ID를 실제 지역명으로 변환하는 API
- * 
- * 📋 **목적**
- * - H3 셀 ID를 한국의 실제 지역명으로 변환
- * - 서울시 구/동 단위로 매핑
- * - 회원 분포도에서 정확한 지역명 표시
- * 
- * 🗄️ **데이터 연동**
- * - H3 셀 중심 좌표를 기반으로 지역명 조회
- * - 서울시 행정구역 데이터 활용
- */
-
+import { logger } from '@/lib/logger';
 import { NextResponse } from 'next/server';
 import * as h3 from 'h3-js';
 
@@ -71,7 +59,7 @@ function getRegionByCoordinates(lat: number, lng: number): { gu: string; dong: s
 
 export async function GET(request: Request) {
   try {
-    console.log('🗺️ 지역명 변환 API 호출 시작');
+    logger.info('🗺️ 지역명 변환 API 호출 시작');
 
     const { searchParams } = new URL(request.url);
     const h3CellIds = searchParams.get('h3CellIds');
@@ -129,7 +117,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('❌ 지역명 변환 API 오류:', error);
+    logger.error('❌ 지역명 변환 API 오류:', error);
 
     return NextResponse.json({
       success: false,

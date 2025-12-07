@@ -16,15 +16,18 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import apiClient from '@/utils/api';
 import StatCard from '@/components/StatCard';
-import Button from '@/components/Button';
+import { Button } from '@/components/ui';
 import RegionNavigation from '@/components/RegionNavigation';
 import AnimatedComparisonChart from '@/components/AnimatedComparisonChart';
 import TrendLineChart, { TrendLineData, TrendMetric } from '@/components/TrendLineChart';
+import { LoadingState, PageHeader } from '@/components/common';
+import type { User } from '@/types/user';
 import { 
   Users, 
   Activity, 
@@ -58,16 +61,6 @@ interface HealthProfile {
     phone: string;
     relationship: string;
   };
-}
-
-interface User {
-  _id: string;
-  email: string;
-  name: string;
-  userType: string;
-  centerId?: string;
-  healthProfile?: HealthProfile;
-  createdAt: string;
 }
 
 export default function HealthOverviewPage() {
@@ -108,7 +101,7 @@ export default function HealthOverviewPage() {
   useEffect(() => {
     if (authLoading) return;
     
-    console.log('🔍 건강 현황 - 사용자 확인:', { user, userType: user?.userType });
+    logger.info('🔍 건강 현황 - 사용자 확인:', { user, userType: user?.userType });
     
     if (!user) {
       alert('로그인이 필요합니다');
@@ -124,53 +117,53 @@ export default function HealthOverviewPage() {
       return;
     }
     
-    console.log('✅ 권한 체크 통과 - loadData 호출');
+    logger.info('✅ 권한 체크 통과 - loadData 호출');
     loadData();
   }, [user, authLoading]);
 
   const loadData = async () => {
-    console.log('📡 loadData 함수 실행 시작');
+    logger.info('📡 loadData 함수 실행 시작');
     try {
       setLoading(true);
       
       // 회원 데이터 로드
-      console.log('🔗 API 호출: /api/users');
+      logger.info('🔗 API 호출: /api/users');
       const usersResponse = await apiClient.get('/api/users');
-      console.log('📊 회원 API 응답:', usersResponse);
+      logger.info('📊 회원 API 응답:', usersResponse);
       
       if (usersResponse) {
         const users = (usersResponse as any).users || usersResponse;
         if (Array.isArray(users)) {
           setUsers(users);
-          console.log(`✅ ${users.length}명의 회원 데이터 로드 완료`);
+          logger.info(`✅ ${users.length}명의 회원 데이터 로드 완료`);
         } else {
-          console.warn('회원 데이터 배열이 아님:', typeof users);
+          logger.warn('회원 데이터 배열이 아님:', typeof users);
           setUsers([]);
         }
       } else {
-        console.warn('회원 데이터 응답 없음');
+        logger.warn('회원 데이터 응답 없음');
         setUsers([]);
       }
       
       // 센터 데이터 로드
-      console.log('🔗 API 호출: /api/centers');
+      logger.info('🔗 API 호출: /api/centers');
       const centersResponse = await apiClient.get('/api/centers');
-      console.log('📊 센터 API 응답:', centersResponse);
+      logger.info('📊 센터 API 응답:', centersResponse);
       
       if ((centersResponse as any)?.data?.centers) {
         const centersData = (centersResponse as any).data.centers;
         setCenters(centersData);
-        console.log(`✅ ${centersData.length}개의 센터 데이터 로드 완료`);
+        logger.info(`✅ ${centersData.length}개의 센터 데이터 로드 완료`);
       } else if ((centersResponse as any)?.centers) {
         setCenters((centersResponse as any).centers);
-        console.log(`✅ ${(centersResponse as any).centers.length}개의 센터 데이터 로드 완료`);
+        logger.info(`✅ ${(centersResponse as any).centers.length}개의 센터 데이터 로드 완료`);
       } else {
-        console.warn('센터 데이터 응답 없음');
+        logger.warn('센터 데이터 응답 없음');
         setCenters([]);
       }
       
     } catch (error: any) {
-      console.error('데이터 로드 오류:', error);
+      logger.error('데이터 로드 오류:', error);
       
       // 토큰 만료 시 재로그인
       if (error?.response?.status === 401 || error?.code === 'TOKEN_EXPIRED') {
@@ -331,7 +324,7 @@ export default function HealthOverviewPage() {
     // RegionNavigation이 기대하는 형식으로 변환: { [region]: { [district]: centerName[] } }
     const regionDistrictMap: { [region: string]: { [district: string]: string[] } } = {};
     
-    console.log('🏢 센터 데이터 변환 시작:', centers.length, '개 센터');
+    logger.info('🏢 센터 데이터 변환 시작:', centers.length, '개 센터');
     
     centers.forEach(center => {
       // province, city, gu 필드가 따로 있는지 확인
@@ -339,7 +332,7 @@ export default function HealthOverviewPage() {
       const district = center.gu || center.dong || '미지정';
       const centerName = center.name;
       
-      console.log('📍 센터 매핑:', { 
+      logger.info('📍 센터 매핑:', { 
         centerName, 
         region, 
         district, 
@@ -359,8 +352,8 @@ export default function HealthOverviewPage() {
       regionDistrictMap[region][district].push(centerName);
     });
     
-    console.log('✅ 최종 centerData 구조:', regionDistrictMap);
-    console.log('📊 지역별 센터 수:', Object.keys(regionDistrictMap).map(region => 
+    logger.info('✅ 최종 centerData 구조:', regionDistrictMap);
+    logger.info('📊 지역별 센터 수:', Object.keys(regionDistrictMap).map(region => 
       `${region}: ${Object.keys(regionDistrictMap[region]).length}개 구, ${
         Object.values(regionDistrictMap[region]).flat().length
       }개 센터`
@@ -408,27 +401,21 @@ export default function HealthOverviewPage() {
   }, [users, searchTerm, filterType, selectedCenters]);
 
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
-    );
+    return <LoadingState message="건강 현황 데이터를 불러오는 중..." size="lg" fullScreen />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Heart className="h-8 w-8 text-red-500" />
-              전체 건강 현황 및 통계
-            </h1>
-            <p className="text-gray-600">
-              전체 회원의 건강 데이터를 실시간으로 분석합니다
-            </p>
+      <PageHeader
+        title={
+          <div className="flex items-center gap-3">
+            <Heart className="h-8 w-8 text-red-500" />
+            전체 건강 현황 및 통계
           </div>
+        }
+        description="전체 회원의 건강 데이터를 실시간으로 분석합니다"
+        actions={
           <Button
             onClick={loadData}
             variant="primary"
@@ -436,8 +423,9 @@ export default function HealthOverviewPage() {
           >
             🔄 새로고침
           </Button>
-        </div>
-      </div>
+        }
+        className="mb-8"
+      />
 
       {/* 탭 메뉴 */}
       <div className="mb-6">

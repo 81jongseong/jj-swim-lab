@@ -95,63 +95,63 @@
  */
 
 // 기본 UI 컴포넌트들
-export { default as BarChart } from './barchart';
-export { default as LoadingSpinner } from './loadingspinner';
-export { ThemeProvider, useTheme } from './themeprovider';
-export { Input } from './input';
-export { Badge } from './badge';
-export { default as Modal } from './modal';
-export { Button } from './button';
+export { default as BarChart } from './BarChart';
+export { default as LoadingSpinner } from './LoadingSpinner';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+export { Input } from './Input';
+export { Badge } from './Badge';
+export { default as Modal } from './Modal';
+export { Button } from './Button';
 
 // 사용자 경험 개선 컴포넌트들
-// export { default as RefreshButton } from './refreshbutton';
-// export { default as toast } from './toast';
-// export { default as ToastContainer } from './toastcontainer';
+// export { default as RefreshButton } from './RefreshButton';
+// export { default as toast } from './Toast';
+// export { default as ToastContainer } from './ToastContainer';
 
 // 배포 및 안정성 컴포넌트들
 // export { ErrorBoundary } from './errorboundary';
-// export { default as ErrorToast } from './errortoast';
-// export { ErrorProvider } from './errorprovider';
+// export { default as ErrorToast } from './ErrorToast';
+// export { ErrorProvider } from './ErrorProvider';
 
 // 3D 뷰어 컴포넌트
-// export { default as ThreeDViewer } from './threedviewer';
-// export { default as SwimmingPoseModel } from './swimmingposemodel';
-// export { default as PoseComparisonViewer } from './posecomparisonviewer';
+// export { default as ThreeDViewer } from './ThreeDViewer';
+// export { default as SwimmingPoseModel } from './SwimmingPoseModel';
+// export { default as PoseComparisonViewer } from './PoseComparisonViewer';
 
 // 고급 UI 컴포넌트들
-// export { default as LazyComponent } from './lazycomponent';
-// export { default as OptimizedImage } from './optimizedimage';
-export { Progress } from './progress';
+// export { default as LazyComponent } from './LazyComponent';
+// export { default as OptimizedImage } from './OptimizedImage';
+export { Progress } from './Progress';
 // export { Checkbox } from './checkbox';
 // export { Alert, AlertTitle, AlertDescription } from './alert';
-// export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
-// export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
-// export { default as Textarea } from './textarea';
-// export { Label } from './label';
-// export { default as Slider } from './slider';
-// export { default as Switch } from './switch';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './Select';
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
+export { default as Textarea } from './Textarea';
+export { Label } from './Label';
+export { default as Slider } from './Slider';
+export { default as Switch } from './Switch';
 
 // 테이블 컴포넌트들
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './table';
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './Table';
 // export { default as ResponsiveTable, TableHeader, TableBody, TableRow, TableCell } from './responsivetable';
 // export { default as TableHeaderCell } from './tableheadercell';
 
 // 컴포넌트 타입 및 인터페이스 (필요한 경우에만 export)
-// export type { BarChartProps } from './BarChart';
+// export type { BarChartProps } from './barchart';
 // export type { LoadingSpinnerProps } from './LoadingSpinner';
 // export type { ThemeProviderProps } from './ThemeProvider';
-// export type { InputProps } from './Input';
-// export type { BadgeProps } from './Badge';
-// export type { ModalProps } from './Modal';
-// export type { ButtonProps } from './Button';
+// export type { InputProps } from './input';
+// export type { BadgeProps } from './badge';
+// export type { ModalProps } from './modal';
+// export type { ButtonProps } from './button';
 // export type { LazyComponentProps } from './LazyComponent';
 // export type { OptimizedImageProps } from './OptimizedImage';
-// export type { ProgressProps } from './Progress';
-// export type { TabsProps } from './Tabs';
-// export type { SelectProps } from './Select';
-// export type { CardProps } from './Card';
-// export type { TextareaProps } from './Textarea';
-// export type { LabelProps } from './Label';
-// export type { SliderProps } from './Slider';
-// export type { SwitchProps } from './Switch'; 
+// export type { ProgressProps } from './progress';
+// export type { TabsProps } from './tabs';
+// export type { SelectProps } from './select';
+// export type { CardProps } from './card';
+// export type { TextareaProps } from './textarea';
+// export type { LabelProps } from './label';
+// export type { SliderProps } from './slider';
+// export type { SwitchProps } from './switch'; 

@@ -6,12 +6,14 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { Calendar, Users, BookOpen, TrendingUp, Clock, Star } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui';
+import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui';
+import { CardGrid } from '@/components/common';
 
 interface DashboardStats {
   totalStudents: number;
@@ -73,15 +75,15 @@ const InstructorDashboard: React.FC = () => {
     const loadInstructorData = async () => {
       try {
         if (!user || !user._id) {
-          console.warn('사용자 정보가 없습니다.');
+          logger.warn('사용자 정보가 없습니다.');
           return;
         }
 
-        console.log('강사 데이터 로드 중...');
+        logger.info('강사 데이터 로드 중...');
         
         const token = localStorage.getItem('token');
         if (!token) {
-          console.error('토큰이 없습니다.');
+          logger.error('토큰이 없습니다.');
           return;
         }
 
@@ -95,7 +97,7 @@ const InstructorDashboard: React.FC = () => {
 
         if (dashboardResponse.ok) {
           const dashboardResult = await dashboardResponse.json();
-          console.log('📊 강사 대시보드 API 응답:', dashboardResult);
+          logger.info('📊 강사 대시보드 API 응답:', dashboardResult);
           
           if (dashboardResult.success && dashboardResult.data) {
             const dashboardData = dashboardResult.data;
@@ -125,7 +127,7 @@ const InstructorDashboard: React.FC = () => {
               setRecentActivities(activities);
             }
 
-            console.log('✅ 강사 데이터 로드 완료 (DB 데이터):', {
+            logger.info('✅ 강사 데이터 로드 완료 (DB 데이터):', {
               stats: statsData,
               bookings: upcomingBookings.length
             });
@@ -137,7 +139,7 @@ const InstructorDashboard: React.FC = () => {
           throw new Error(errorData.message || `API 호출 실패: ${dashboardResponse.status}`);
         }
       } catch (error) {
-        console.error('강사 데이터 로드 실패:', error);
+        logger.error('강사 데이터 로드 실패:', error);
         // 에러 발생 시 기본값 설정
         setStats({
           totalStudents: 0,
@@ -186,7 +188,7 @@ const InstructorDashboard: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardGrid gap={4}>
             <Card className="transition-all border border-gray-100 hover:border-primary/40 hover:shadow-lg">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-center justify-between">
@@ -230,7 +232,7 @@ const InstructorDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500">이번 달 예상 수익</p>
               </CardContent>
             </Card>
-          </div>
+          </CardGrid>
         </CardContent>
       </Card>
 
@@ -332,7 +334,7 @@ const InstructorDashboard: React.FC = () => {
           <p className="text-sm text-gray-600">자주 사용하는 기능들에 빠르게 접근하세요.</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardGrid gap={4}>
             <button
               className="h-20 flex flex-col items-center justify-center bg-white border border-gray-300 rounded-lg hover:bg-primary/5 transition-colors"
               onClick={() => window.location.href = '/instructor/students'}
@@ -354,7 +356,7 @@ const InstructorDashboard: React.FC = () => {
               <BookOpen className="h-6 w-6 mb-2 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">강습법 관리</span>
             </button>
-          </div>
+          </CardGrid>
         </CardContent>
       </Card>
     </div>
@@ -362,3 +364,4 @@ const InstructorDashboard: React.FC = () => {
 };
 
 export default InstructorDashboard;
+

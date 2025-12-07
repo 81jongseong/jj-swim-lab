@@ -92,10 +92,10 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import React, { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader, CardTitle } from './ui/card';
-import Button from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle, Button } from './ui';
 import { Badge } from '@/components/ui';
 import {
   Brain,
@@ -160,7 +160,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
         setDashboardData(data.data);
       }
     } catch (error) {
-      console.error('AI 대시보드 데이터 로드 오류:', error);
+      logger.error('AI 대시보드 데이터 로드 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -184,7 +184,7 @@ export default function AIDashboard({ studentId, instructorId }: AIDashboardProp
         await loadDashboardData(); // 데이터 새로고침
       }
     } catch (error) {
-      console.error('AI 분석 실행 오류:', error);
+      logger.error('AI 분석 실행 오류:', error);
     }
   };
 

@@ -24,12 +24,12 @@ interface SimpleBarChartProps {
   data?: ChartData[];
   xKey?: string;
   yKey?: string;
-  
+
   // 단일 바 모드
   label?: string;
   value?: number;
   maxValue?: number;
-  
+
   // 공통 옵션
   color?: string;
   maxHeight?: number;
@@ -76,7 +76,7 @@ export default function SimpleBarChart({
       </div>
     );
   }
-  
+
   // 차트 데이터 모드
   if (!data || data.length === 0) {
     return (
@@ -87,27 +87,29 @@ export default function SimpleBarChart({
   }
 
   // 최대값 계산
-  const dataMaxValue = Math.max(...data.map(item => Number(item[yKey!]) || 0));
-  const minValue = Math.min(...data.map(item => Number(item[yKey!]) || 0));
+  const yKeySafe = yKey || 'value';
+  const xKeySafe = xKey || 'name';
+  const dataMaxValue = Math.max(...data.map(item => Number(item[yKeySafe]) || 0));
+  const minValue = Math.min(...data.map(item => Number(item[yKeySafe]) || 0));
   const range = dataMaxValue - minValue || 1;
 
   if (horizontal) {
     return (
       <div className={`space-y-4 ${className}`}>
         {data.map((item, index) => {
-          const value = Number(item[yKey]) || 0;
+          const value = Number(item[yKeySafe]) || 0;
           const percentage = range > 0 ? ((value - minValue) / range) * 100 : 0;
           const normalizedWidth = 10 + (percentage * 0.8); // 10%-90% 범위로 정규화
-          
+
           return (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="space-y-2 group/item animate-fadeInUp"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-gray-700 group-hover/item:text-gray-900 transition-colors duration-300 truncate">
-                  {item[xKey]}
+                  {item[xKeySafe]}
                 </span>
                 {showValues && (
                   <span className="text-sm font-bold text-gray-800 group-hover/item:text-blue-600 transition-colors duration-300">
@@ -138,15 +140,15 @@ export default function SimpleBarChart({
         <div>최소: {minValue.toLocaleString()}</div>
         <div className="text-right">최대: {dataMaxValue.toLocaleString()}</div>
       </div>
-      
-      <div 
+
+      <div
         className="flex items-end justify-between gap-2"
         style={{ height: maxHeight }}
       >
         {data.map((item, index) => {
-          const value = Number(item[yKey]) || 0;
+          const value = Number(item[yKeySafe]) || 0;
           const percentage = range > 0 ? ((value - minValue) / range) * 100 : 0;
-          
+
           return (
             <div key={index} className="flex-1 flex flex-col items-center">
               <div className="relative w-full flex flex-col items-center">
@@ -165,9 +167,9 @@ export default function SimpleBarChart({
                 )}
               </div>
               <div className="mt-2 text-xs text-gray-600 text-center break-words max-w-full">
-                {String(item[xKey]).length > 10 
-                  ? `${String(item[xKey]).substring(0, 8)}...`
-                  : item[xKey]
+                {String(item[xKeySafe]).length > 10
+                  ? `${String(item[xKeySafe]).substring(0, 8)}...`
+                  : item[xKeySafe]
                 }
               </div>
             </div>

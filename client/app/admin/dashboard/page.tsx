@@ -6,12 +6,15 @@
  */
 
 'use client';
+import { logger } from '@/lib/logger';
 
 import { useState, useEffect } from 'react';
 import { getDashboardStats, DashboardStats } from '../../../lib/api/dashboard';
 import VWorldKeyBadge, { VWorldExpiryBanner } from '../../../components/VWorldKeyBadge';
 import StatCard from '@/components/StatCard';
 import SimpleBarChart from '@/components/SimpleBarChart';
+import { CardGrid, LoadingState, ErrorState, PageHeader } from '@/components/common';
+import { Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
 
 interface AdminStats extends DashboardStats {
@@ -30,6 +33,8 @@ export default function AdminDashboard() {
     courseStats: [],
     systemHealth: 'good'
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 승인 대기 항목들
   const [pendingApprovals, setPendingApprovals] = useState({
@@ -54,13 +59,18 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const data = await getDashboardStats();
       setStats({
         ...data,
         systemHealth: 'good'
       });
-    } catch (error) {
-      console.error('대시보드 통계 로드 실패:', error);
+    } catch (err: any) {
+      logger.error('대시보드 통계 로드 실패:', err);
+      setError(err.message || '대시보드 통계를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,18 +103,40 @@ export default function AdminDashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <LoadingState message="대시보드 데이터를 불러오는 중..." size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <ErrorState 
+          message={error}
+          onRetry={() => {
+            setError(null);
+            fetchDashboardStats();
+          }}
+          retryText="다시 시도"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* VWorld 키 만료 배너 */}
       <VWorldExpiryBanner />
 
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
-          <VWorldKeyBadge />
-        </div>
-        <p className="text-gray-600 mt-2">JJ Swim Lab 시스템 현황 및 성능 모니터링</p>
-      </div>
+      <PageHeader
+        title="관리자 대시보드"
+        description="JJ Swim Lab 시스템 현황 및 성능 모니터링"
+        actions={<VWorldKeyBadge />}
+        className="mb-8"
+      />
 
       {/* 시스템 상태 카드 */}
       <div className="mb-8 animate-fade-in-up">
@@ -177,7 +209,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* 통계 카드들 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <CardGrid gap={6} className="mb-8">
         <StatCard
           title="전체 사용자"
           value={stats.totalUsers.toLocaleString()}
@@ -213,7 +245,7 @@ export default function AdminDashboard() {
           subtitle="처리 대기 중"
           href="/admin/approvals"
         />
-      </div>
+      </CardGrid>
 
       {/* 성능 모니터링 섹션 */}
       <div className="mb-8">
@@ -299,35 +331,39 @@ export default function AdminDashboard() {
       {/* 빠른 액션 버튼들 */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">⚡ 빠른 액션</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button
+        <CardGrid gap={4}>
+          <Button
             onClick={() => window.location.href = '/admin/teaching-methods'}
-            className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            variant="outline"
+            className="h-20 text-lg font-semibold"
           >
             📚 강습법 관리
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => window.location.href = '/admin/center-levels'}
-            className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            variant="outline"
+            className="h-20 text-lg font-semibold"
           >
             🎯 센터별 레벨 관리
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => window.location.href = '/admin/bookings'}
-            className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            variant="outline"
+            className="h-20 text-lg font-semibold"
           >
             📅 예약 관리
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => window.location.href = '/admin/reports'}
-            className="h-20 text-lg font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            variant="outline"
+            className="h-20 text-lg font-semibold"
           >
             📊 리포트 생성
-          </button>
-        </div>
+          </Button>
+        </CardGrid>
       </div>
 
       {/* 최근 활동 */}

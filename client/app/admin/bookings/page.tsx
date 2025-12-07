@@ -98,6 +98,7 @@ import { useState, useEffect } from 'react';
 import withAuth from '../../../components/withAuth';
 import apiClient from '../../../utils/api';
 import { useAuth } from '../../../hooks/useAuth';
+import { LoadingState, PageHeader, ConfirmModal, ErrorState } from '@/components/common';
 
 interface Booking {
   id: string;
@@ -117,6 +118,7 @@ function AdminBookingsPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
@@ -126,6 +128,19 @@ function AdminBookingsPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [userIdFilter, setUserIdFilter] = useState<string>('');
+  
+  // ConfirmModal 상태
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    variant?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+    variant: 'info'
+  });
   const [instructorIdFilter, setInstructorIdFilter] = useState<string>('');
   const [newBooking, setNewBooking] = useState<Partial<Booking>>({
     memberName: '',
@@ -142,32 +157,40 @@ function AdminBookingsPage() {
 
   const load = async () => {
     setLoading(true);
-    const params: any = {};
-    if (statusFilter) params.status = statusFilter;
-    if (dateFilter) params.date = dateFilter;
-    if (userIdFilter) params.user = userIdFilter;
-    if (instructorIdFilter) params.instructor = instructorIdFilter;
-    const res = await apiClient.getBookings(params);
-    if (!res.error) {
-      const items = (res.data as any)?.bookings || [];
-      const rows = items.map((b:any)=> ({
-        id: b._id,
-        memberName: b.user?.name || b.user?.userId || '-',
-        courseName: b.course?.name || '-',
-        instructor: b.instructor?.name || '-',
-        date: b.date ? new Date(b.date).toISOString().slice(0,10) : '-',
-        time: b.startTime && b.endTime ? `${b.startTime}-${b.endTime}` : '-',
-        lane: b.laneNumber || 0,
-        status: b.status,
-        paymentStatus: 'unpaid',
-        amount: b.amount || 0,
-        createdAt: b.createdAt ? new Date(b.createdAt).toISOString().slice(0,10) : '-'
-      }));
-      setBookings(rows);
-      setSelectedIds([]);
-      setPage(1);
+    setError(null);
+    try {
+      const params: any = {};
+      if (statusFilter) params.status = statusFilter;
+      if (dateFilter) params.date = dateFilter;
+      if (userIdFilter) params.user = userIdFilter;
+      if (instructorIdFilter) params.instructor = instructorIdFilter;
+      const res = await apiClient.getBookings(params);
+      if (res.error) {
+        setError(res.error);
+      } else {
+        const items = (res.data as any)?.bookings || [];
+        const rows = items.map((b:any)=> ({
+          id: b._id,
+          memberName: b.user?.name || b.user?.userId || '-',
+          courseName: b.course?.name || '-',
+          instructor: b.instructor?.name || '-',
+          date: b.date ? new Date(b.date).toISOString().slice(0,10) : '-',
+          time: b.startTime && b.endTime ? `${b.startTime}-${b.endTime}` : '-',
+          lane: b.laneNumber || 0,
+          status: b.status,
+          paymentStatus: 'unpaid',
+          amount: b.amount || 0,
+          createdAt: b.createdAt ? new Date(b.createdAt).toISOString().slice(0,10) : '-'
+        }));
+        setBookings(rows);
+        setSelectedIds([]);
+        setPage(1);
+      }
+    } catch (err: any) {
+      setError(err.message || '예약 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -189,15 +212,24 @@ function AdminBookingsPage() {
 
   const handleCancelBooking = async (bookingId: string) => {
     const booking = bookings.find(b => b.id === bookingId);
-    if (booking && confirm(`정말로 ${booking.memberName}님의 예약을 취소하시겠습니까?`)) {
-      const res = await apiClient.cancelBooking(bookingId);
-      if (!res.error) {
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
-        alert('예약이 취소되었습니다.');
-      } else {
-        alert(res.error);
+    if (!booking) return;
+    
+    setConfirmModal({
+      isOpen: true,
+      message: `정말로 ${booking.memberName}님의 예약을 취소하시겠습니까?`,
+      variant: 'warning',
+      onConfirm: async () => {
+        const res = await apiClient.cancelBooking(bookingId);
+        if (!res.error) {
+          setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
+          alert('예약이 취소되었습니다.');
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        } else {
+          alert(res.error);
+          setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        }
       }
-    }
+    });
   };
 
   const isSuperAdmin = user?.userType === 'superAdmin';
@@ -350,13 +382,24 @@ function AdminBookingsPage() {
     return (
       <div className="min-h-screen bg-blue-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-              <p className="mt-6 text-xl text-gray-700 font-medium">로딩 중입니다...</p>
-              <p className="mt-2 text-lg text-gray-500">잠시만 기다려주세요</p>
-            </div>
-          </div>
+          <LoadingState message="로딩 중입니다..." size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-blue-50 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => {
+              setError(null);
+              load();
+            }}
+            retryText="다시 시도"
+          />
         </div>
       </div>
     );
@@ -365,10 +408,10 @@ function AdminBookingsPage() {
   return (
     <div className="min-h-screen bg-blue-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-blue-900 mb-3">🏊‍♂️ 예약 관리</h1>
-          <p className="text-xl text-blue-700">JJ Swim Lab의 모든 예약을 쉽게 관리하세요</p>
-        </div>
+        <PageHeader
+          title="🏊‍♂️ 예약 관리"
+          description="JJ Swim Lab의 모든 예약을 쉽게 관리하세요"
+        />
 
         <div className="bg-white rounded-xl shadow-lg border-2 border-blue-200">
           <div className="px-8 py-6 border-b-2 border-blue-200 bg-blue-50">
@@ -864,6 +907,18 @@ function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+        variant={confirmModal.variant || 'info'}
+        title="확인"
+        confirmText="확인"
+        cancelText="취소"
+      />
     </div>
   );
 }
