@@ -1790,7 +1790,8 @@ export default function GeoDistributionPage() {
 
         {/* 지도 컨테이너 */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden relative">
-          {!process.env.NEXT_PUBLIC_VWORLD_KEY || process.env.NEXT_PUBLIC_VWORLD_KEY === 'undefined' || process.env.NEXT_PUBLIC_VWORLD_KEY === '' ? (
+          {/* API 키가 없을 때만 에러 표시 */}
+          {(!process.env.NEXT_PUBLIC_VWORLD_KEY || process.env.NEXT_PUBLIC_VWORLD_KEY === 'undefined' || process.env.NEXT_PUBLIC_VWORLD_KEY === '') ? (
             <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-red-300">
               <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
                 <div className="text-4xl mb-4">🚨</div>
@@ -1811,16 +1812,9 @@ export default function GeoDistributionPage() {
                 </p>
               </div>
             </div>
-          ) : !mapLoaded && !librariesLoaded ? (
-            <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">지도 라이브러리 로딩 중...</p>
-              </div>
-            </div>
           ) : mapError ? (
-            <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-red-300">
-              <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+            <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-red-300 relative">
+              <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md z-10">
                 <div className="text-4xl mb-4">⚠️</div>
                 <h3 className="text-xl font-bold text-red-600 mb-2">지도 로딩 실패</h3>
                 <p className="text-gray-700 mb-4">{mapError}</p>
@@ -1844,18 +1838,33 @@ export default function GeoDistributionPage() {
                   🔄 페이지 새로고침
                 </button>
               </div>
-            </div>
-          ) : !mapLoaded ? (
-            <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">지도 초기화 중...</p>
-                <p className="text-xs text-gray-500 mt-2">VWorld API 키를 확인하는 중...</p>
-                <p className="text-xs text-gray-400 mt-2">30초 이상 걸리면 네트워크나 API 키를 확인하세요.</p>
-              </div>
+              {/* 지도 컨테이너는 항상 렌더링 (ref 연결을 위해) */}
+              <div 
+                ref={mapRef} 
+                className="w-full h-[600px] absolute inset-0 opacity-0 pointer-events-none"
+                style={{ minHeight: '600px' }}
+              />
             </div>
           ) : (
             <>
+              {/* 로딩 오버레이 */}
+              {(!mapLoaded || !librariesLoaded) && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50 bg-opacity-90">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">
+                      {!librariesLoaded ? '지도 라이브러리 로딩 중...' : '지도 초기화 중...'}
+                    </p>
+                    {librariesLoaded && !mapLoaded && (
+                      <>
+                        <p className="text-xs text-gray-500 mt-2">VWorld API 키를 확인하는 중...</p>
+                        <p className="text-xs text-gray-400 mt-2">30초 이상 걸리면 네트워크나 API 키를 확인하세요.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* 지도 컨테이너는 항상 렌더링 (ref 연결을 위해) */}
               <div 
                 ref={mapRef} 
                 className="w-full h-[600px]"
@@ -1863,6 +1872,7 @@ export default function GeoDistributionPage() {
               />
               
               {/* 지도 배율 표시 */}
+              {mapLoaded && (
               <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-300 rounded-lg px-3 py-2 shadow-lg">
             <div className="text-sm font-medium text-gray-700">
               📏 지도 배율: 1:{Math.round(Math.pow(2, currentZoom) * 256).toLocaleString()}
