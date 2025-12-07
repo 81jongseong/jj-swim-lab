@@ -855,22 +855,28 @@ export default function GeoDistributionPage() {
     }, 30000);
 
     // VWorld 지도 사용
+    const vworldTileUrl = `https://api.vworld.kr/req/wmts/1.0.0/${vworldKey}/Base/{z}/{y}/{x}.png`;
+    logger.info('🗺️ VWorld 타일 URL:', vworldTileUrl.replace(vworldKey, '***'));
+    
     const style: any = {
       version: 8,
       sources: {
         'vworld': {
           type: 'raster',
-          tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${vworldKey}/Base/{z}/{y}/{x}.png`
-          ],
-          tileSize: 256
+          tiles: [vworldTileUrl],
+          tileSize: 256,
+          // 타일 로딩 실패 시 재시도 설정
+          minzoom: 0,
+          maxzoom: 18
         }
       },
       layers: [
         {
           id: 'vworld-base',
           type: 'raster',
-          source: 'vworld'
+          source: 'vworld',
+          minzoom: 0,
+          maxzoom: 18
         }
       ]
     };
@@ -934,9 +940,30 @@ export default function GeoDistributionPage() {
     map.on('data', (e: any) => {
       if (e.dataType === 'source' && e.isSourceLoaded === false && e.sourceId === 'vworld') {
         logger.error('🚨 지도 타일 소스 로딩 실패:', e.sourceId);
-        clearTimeout(timeoutId);
-        setMapError('VWorld 지도 타일을 로드할 수 없습니다. API 키와 네트워크 연결을 확인하세요.');
-        setMapLoaded(false);
+        logger.error('📋 상세 정보:', {
+          sourceId: e.sourceId,
+          dataType: e.dataType,
+          isSourceLoaded: e.isSourceLoaded,
+          error: e.error
+        });
+        // 타일 로딩 실패는 에러로 표시하지 않고 계속 시도 (일부 타일만 실패할 수 있음)
+        // clearTimeout(timeoutId);
+        // setMapError('VWorld 지도 타일을 로드할 수 없습니다. API 키와 네트워크 연결을 확인하세요.');
+        // setMapLoaded(false);
+      }
+    });
+
+    // 타일 로딩 에러 이벤트 (개별 타일 실패)
+    map.on('error', (e: any) => {
+      if (e.error && e.error.message) {
+        logger.error('🚨 지도 타일 에러:', e.error.message);
+        // 타일 URL 확인
+        if (e.error.message.includes('tile') || e.error.message.includes('vworld')) {
+          logger.error('📋 VWorld 타일 URL 확인 필요:', {
+            vworldKey: vworldKey ? `${vworldKey.substring(0, 8)}...` : '없음',
+            errorMessage: e.error.message
+          });
+        }
       }
     });
 
