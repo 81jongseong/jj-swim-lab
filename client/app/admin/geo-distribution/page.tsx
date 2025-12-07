@@ -822,11 +822,21 @@ export default function GeoDistributionPage() {
       hasMapRef: !!mapRef.current,
       hasMaplibregl: !!maplibregl,
       hasMapboxOverlay: !!MapboxOverlay,
-      librariesLoaded
+      librariesLoaded,
+      vworldKey: process.env.NEXT_PUBLIC_VWORLD_KEY ? '설정됨' : '❌ 미설정'
     });
 
     if (!librariesLoaded || !mapRef.current || !maplibregl || !MapboxOverlay) {
       logger.info('⏳ 지도 초기화 대기 중 - 라이브러리 또는 DOM 요소 대기');
+      return;
+    }
+
+    // VWorld API 키 확인
+    const vworldKey = process.env.NEXT_PUBLIC_VWORLD_KEY;
+    if (!vworldKey || vworldKey === 'undefined' || vworldKey === '') {
+      logger.error('🚨 VWorld API 키가 설정되지 않았습니다!');
+      logger.error('📋 해결 방법: .env.local 파일에 NEXT_PUBLIC_VWORLD_KEY를 설정하세요.');
+      setMapLoaded(false);
       return;
     }
 
@@ -837,7 +847,7 @@ export default function GeoDistributionPage() {
         'vworld': {
           type: 'raster',
           tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${process.env.NEXT_PUBLIC_VWORLD_KEY}/Base/{z}/{y}/{x}.png`
+            `https://api.vworld.kr/req/wmts/1.0.0/${vworldKey}/Base/{z}/{y}/{x}.png`
           ],
           tileSize: 256
         }
@@ -886,9 +896,29 @@ export default function GeoDistributionPage() {
       setCurrentZoom(map.getZoom());
     });
 
+    // 지도 에러 처리
+    map.on('error', (e: any) => {
+      logger.error('🚨 지도 에러 발생:', e);
+      if (e.error && e.error.message) {
+        logger.error('에러 메시지:', e.error.message);
+      }
+      setMapLoaded(false);
+    });
+
+    // 타일 로딩 에러 처리
+    map.on('data', (e: any) => {
+      if (e.dataType === 'source' && e.isSourceLoaded === false) {
+        logger.error('🚨 지도 타일 소스 로딩 실패:', e.sourceId);
+        if (e.sourceId === 'vworld') {
+          logger.error('📋 VWorld API 키를 확인하세요. .env.local 파일에 NEXT_PUBLIC_VWORLD_KEY가 올바르게 설정되어 있는지 확인하세요.');
+        }
+      }
+    });
+
     // 지도 로딩 완료
     map.on('load', () => {
       logger.info('🗺️ VWorld 지도 로딩 완료');
+      setMapLoaded(true);
       
       // 지역이 선택된 경우에만 데이터 로딩
       if (selectedRegions.size > 0) {
@@ -1725,14 +1755,52 @@ export default function GeoDistributionPage() {
 
         {/* 지도 컨테이너 */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden relative">
-          <div 
-            ref={mapRef} 
-            className="w-full h-[600px]"
-            style={{ minHeight: '600px' }}
-          />
-          
-          {/* 지도 배율 표시 */}
-          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-300 rounded-lg px-3 py-2 shadow-lg">
+          {!process.env.NEXT_PUBLIC_VWORLD_KEY || process.env.NEXT_PUBLIC_VWORLD_KEY === 'undefined' || process.env.NEXT_PUBLIC_VWORLD_KEY === '' ? (
+            <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-red-300">
+              <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+                <div className="text-4xl mb-4">🚨</div>
+                <h3 className="text-xl font-bold text-red-600 mb-2">VWorld API 키가 설정되지 않았습니다</h3>
+                <p className="text-gray-700 mb-4">
+                  지도를 표시하려면 VWorld API 키가 필요합니다.
+                </p>
+                <div className="text-left bg-gray-50 p-4 rounded border border-gray-200 text-sm">
+                  <p className="font-semibold mb-2">해결 방법:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                    <li>프로젝트 루트에 <code className="bg-gray-200 px-1 rounded">.env.local</code> 파일 생성</li>
+                    <li>다음 내용 추가: <code className="bg-gray-200 px-1 rounded">NEXT_PUBLIC_VWORLD_KEY=여기에_API_키</code></li>
+                    <li>개발 서버 재시작: <code className="bg-gray-200 px-1 rounded">npm run dev</code></li>
+                  </ol>
+                </div>
+                <p className="text-xs text-gray-500 mt-4">
+                  VWorld API 키 발급: <a href="https://www.vworld.kr/dev/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">https://www.vworld.kr/dev/</a>
+                </p>
+              </div>
+            </div>
+          ) : !mapLoaded && !librariesLoaded ? (
+            <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">지도 라이브러리 로딩 중...</p>
+              </div>
+            </div>
+          ) : !mapLoaded ? (
+            <div className="w-full h-[600px] flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">지도 초기화 중...</p>
+                <p className="text-xs text-gray-500 mt-2">VWorld API 키를 확인하는 중...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div 
+                ref={mapRef} 
+                className="w-full h-[600px]"
+                style={{ minHeight: '600px' }}
+              />
+              
+              {/* 지도 배율 표시 */}
+              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-300 rounded-lg px-3 py-2 shadow-lg">
             <div className="text-sm font-medium text-gray-700">
               📏 지도 배율: 1:{Math.round(Math.pow(2, currentZoom) * 256).toLocaleString()}
             </div>
@@ -1743,6 +1811,8 @@ export default function GeoDistributionPage() {
               단위: {metadata?.administrativeUnit || '지번주소 단위'}
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* 툴팁 */}
