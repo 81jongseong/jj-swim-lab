@@ -7,8 +7,9 @@ const Booking_1 = require("../models/Booking");
 const Payment_1 = require("../models/Payment");
 const Approval_1 = require("../models/Approval");
 const logger_1 = require("../utils/logger");
+const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-router.get('/stats', async (req, res) => {
+router.get('/stats', auth_1.authMiddleware, (0, auth_1.requireRole)(['superAdmin', 'centerAdmin']), async (req, res) => {
     try {
         console.log('📊 대시보드 통계 요청 받음');
         const totalUsers = await User_1.User.countDocuments({ isActive: true });

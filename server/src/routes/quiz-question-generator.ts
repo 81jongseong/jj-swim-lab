@@ -470,4 +470,213 @@ router.post('/merge-by-category', authMiddleware, requireRole(['instructor', 'ce
   }
 });
 
+/**
+ * 주관식 문제 생성 (교재 텍스트 분석)
+ */
+import { SubjectiveQuestionGeneratorService, SubjectiveQuestionInput } from '../services/subjectiveQuestionGeneratorService';
+
+router.post('/generate-subjective-questions', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+  try {
+    const {
+      textbookContent,
+      section,
+      topic,
+      minQuestions = 3,
+      category
+    } = req.body;
+
+    if (!textbookContent || textbookContent.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '교재 내용이 필요합니다.'
+      });
+    }
+
+    const input: SubjectiveQuestionInput = {
+      textbookContent: textbookContent.trim(),
+      section,
+      topic,
+      minQuestions: Math.min(Math.max(3, minQuestions), 20), // 3~20개 사이
+      category
+    };
+
+    const questions = SubjectiveQuestionGeneratorService.generateQuestions(input);
+
+    res.json({
+      success: true,
+      message: `${questions.length}개의 주관식 문제가 생성되었습니다.`,
+      data: {
+        questions,
+        section,
+        topic,
+        category,
+        count: questions.length
+      }
+    });
+  } catch (error: any) {
+    logError('주관식 문제 생성 실패', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || '문제 생성 중 오류가 발생했습니다.',
+      error: error.name || 'UNKNOWN_ERROR'
+    });
+  }
+});
+
+/**
+ * 주관식 문제를 퀴즈로 저장 (객관식과 같은 카테고리로 저장 가능)
+ */
+router.post('/save-subjective-quiz', authMiddleware, requireRole(['instructor', 'centerAdmin', 'superAdmin']), async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!(req as any).user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: '사용자 인증이 필요합니다.'
+      });
+    }
+
+    const {
+      subjectiveQuestions, // 주관식 문제 배열
+      title,
+      description,
+      category, // 객관식과 같은 카테고리 사용 가능
+      tags
+    } = req.body;
+
+    if (!subjectiveQuestions || !Array.isArray(subjectiveQuestions) || subjectiveQuestions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '저장할 주관식 문제가 없습니다.'
+      });
+    }
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: '카테고리가 필요합니다.'
+      });
+    }
+
+    const normalizedCategory = category.trim();
+    const userId = (req as any).user._id;
+
+    // 같은 카테고리로 생성된 기존 퀴즈 찾기 (객관식과 주관식 모두 포함)
+    const existingQuiz = await Quiz.findOne({
+      category: normalizedCategory,
+      createdBy: userId,
+      isActive: true
+    }).sort({ createdAt: -1 });
+
+    logDebug('기존 퀴즈 검색 (주관식)', {
+      category: normalizedCategory,
+      userId,
+      found: !!existingQuiz,
+      existingQuizId: existingQuiz?._id,
+      existingQuestionCount: existingQuiz?.questions?.length
+    });
+
+    // 주관식 문제를 Quiz 모델 형식으로 변환
+    const questions = subjectiveQuestions.map((q: any) => {
+      const isTwoStep = !!(q.정답_1차 && q.정답_2차);
+      
+      return {
+        question: q.주관식_질문,
+        type: 'short-answer' as const,
+        // 2단계 답변인 경우 배열로 저장, 아니면 기존 방식
+        correctAnswer: isTwoStep 
+          ? [q.정답_1차, q.정답_2차] // 2단계 답변: [1차 답변, 2차 답변]
+          : q.정답_상세_내용, // 1단계 답변: 기존 방식
+        explanation: isTwoStep 
+          ? `1차 답변: ${q.정답_1차}\n\n2차 답변: ${q.정답_2차}`
+          : q.정답_상세_내용,
+        points: isTwoStep ? 2 : 1, // 2단계는 2점, 1단계는 1점
+        metadata: {
+          핵심_키워드: q.핵심_키워드,
+          문제_유형: q.문제_유형,
+          section: q.section,
+          topic: q.topic,
+          isTwoStep: isTwoStep, // 2단계 답변 여부
+          정답_1차: q.정답_1차,
+          정답_2차: q.정답_2차,
+          정답_상세_내용: q.정답_상세_내용 // 기존 호환성 유지
+        }
+      };
+    });
+
+    if (existingQuiz) {
+      // 기존 퀴즈에 주관식 문제 추가 (객관식과 함께 저장)
+      logInfo('기존 퀴즈에 주관식 문제 추가', { 
+        quizId: existingQuiz._id, 
+        questionCount: questions.length,
+        existingCount: existingQuiz.questions.length
+      });
+      
+      existingQuiz.questions.push(...questions);
+      existingQuiz.title = title || existingQuiz.title || `${normalizedCategory} 관련 문제 세트`;
+      existingQuiz.description = description || existingQuiz.description || `${existingQuiz.questions.length}개의 문제가 포함된 세트입니다. (객관식 + 주관식)`;
+      
+      // 타입이 혼합된 경우 'practice'로 설정
+      const hasMultipleChoice = existingQuiz.questions.some((q: any) => q.type === 'multiple-choice');
+      const hasShortAnswer = existingQuiz.questions.some((q: any) => q.type === 'short-answer');
+      if (hasMultipleChoice && hasShortAnswer) {
+        existingQuiz.type = 'practice'; // 혼합 타입
+      }
+      
+      if (tags && Array.isArray(tags)) {
+        existingQuiz.tags = [...new Set([...existingQuiz.tags, ...tags])];
+      }
+      
+      await existingQuiz.save();
+      logInfo('퀴즈 저장 완료 (주관식 추가)', { 
+        quizId: existingQuiz._id, 
+        totalQuestions: existingQuiz.questions.length 
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `${subjectiveQuestions.length}개의 주관식 문제가 기존 퀴즈에 추가되었습니다. (총 ${existingQuiz.questions.length}개 문제)`,
+        data: {
+          quiz: existingQuiz,
+          addedCount: subjectiveQuestions.length,
+          totalCount: existingQuiz.questions.length
+        }
+      });
+    } else {
+      // 새 퀴즈 생성 (주관식만)
+      logInfo('새 퀴즈 생성 (주관식)', { category: normalizedCategory });
+      const quiz = new Quiz({
+        title: title || `${normalizedCategory} 관련 주관식 문제 세트`,
+        description: description || `${subjectiveQuestions.length}개의 주관식 문제가 포함된 세트입니다.`,
+        category: normalizedCategory,
+        difficulty: 'intermediate',
+        type: 'short-answer', // 주관식 전용
+        questions,
+        passingScore: 70,
+        maxAttempts: 3,
+        tags: tags || [category, '주관식', '자동생성'],
+        createdBy: userId,
+        assignedTo: [],
+        isActive: true
+      });
+
+      await quiz.save();
+
+      res.status(201).json({
+        success: true,
+        message: `${subjectiveQuestions.length}개의 주관식 문제가 퀴즈로 저장되었습니다.`,
+        data: {
+          quiz,
+          addedCount: subjectiveQuestions.length
+        }
+      });
+    }
+  } catch (error: any) {
+    logError('주관식 퀴즈 저장 실패', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || '퀴즈 저장 중 오류가 발생했습니다.'
+    });
+  }
+});
+
 export default router;

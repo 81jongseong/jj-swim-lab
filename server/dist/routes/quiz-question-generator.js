@@ -342,5 +342,42 @@ router.post('/merge-by-category', auth_1.authMiddleware, (0, auth_1.requireRole)
         });
     }
 });
+const anatomyQuestionGeneratorService_1 = require("../services/anatomyQuestionGeneratorService");
+router.post('/generate-anatomy-questions', auth_1.authMiddleware, (0, auth_1.requireRole)(['instructor', 'centerAdmin', 'superAdmin']), async (req, res) => {
+    try {
+        const { textbookContent, section, topic, minQuestions = 3 } = req.body;
+        if (!textbookContent || textbookContent.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: '교재 내용이 필요합니다.'
+            });
+        }
+        const input = {
+            textbookContent: textbookContent.trim(),
+            section,
+            topic,
+            minQuestions: Math.min(Math.max(3, minQuestions), 20)
+        };
+        const questions = anatomyQuestionGeneratorService_1.AnatomyQuestionGeneratorService.generateQuestions(input);
+        res.json({
+            success: true,
+            message: `${questions.length}개의 주관식 문제가 생성되었습니다.`,
+            data: {
+                questions,
+                section,
+                topic,
+                count: questions.length
+            }
+        });
+    }
+    catch (error) {
+        (0, logger_1.logError)('기능해부학 문제 생성 실패', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || '문제 생성 중 오류가 발생했습니다.',
+            error: error.name || 'UNKNOWN_ERROR'
+        });
+    }
+});
 exports.default = router;
 //# sourceMappingURL=quiz-question-generator.js.map

@@ -52,11 +52,23 @@ interface GeneratedQuestion {
   incorrectPoolDetails?: Array<{ option: string; whyIncorrect?: string }>;
 }
 
+interface SubjectiveQuestion {
+  핵심_키워드: string;
+  문제_유형: '개념 서술' | '분류/종류' | '기능/역할' | '순서/단계' | '공식';
+  주관식_질문: string;
+  정답_상세_내용: string;
+  // 2단계 답변 구조 (선택사항)
+  정답_1차?: string; // 중제목/핵심 답변
+  정답_2차?: string; // 세부사항/상세 답변
+  isTwoStep?: boolean; // 2단계 답변 여부
+}
+
 export default function QuizQuestionGeneratorPage() {
   const { user } = useAuth();
   const [step, setStep] = useState<'input' | 'result' | 'saved'>('input');
   const [loading, setLoading] = useState(false);
   const [displayMode, setDisplayMode] = useState<'study' | 'exam'>('exam'); // 공부용: 이론 먼저, 시험용: 문제 먼저
+  const [mode, setMode] = useState<'multiple-choice' | 'subjective'>('multiple-choice'); // 객관식 또는 주관식
   
   // 입력 데이터 (JSON 또는 개별 입력)
   const [inputMode, setInputMode] = useState<'json' | 'form'>('json');
@@ -86,6 +98,18 @@ export default function QuizQuestionGeneratorPage() {
   
   // 여러 문제 생성 모드
   const [batchMode, setBatchMode] = useState(false);
+  
+  // 주관식 문제 생성 모드
+  const [subjectiveInputMode, setSubjectiveInputMode] = useState<'text' | 'json'>('text'); // 텍스트 분석 또는 JSON 입력
+  const [subjectiveJsonInput, setSubjectiveJsonInput] = useState(''); // JSON 입력
+  const [subjectiveInput, setSubjectiveInput] = useState({
+    textbookContent: '',
+    section: '',
+    topic: '',
+    minQuestions: 3,
+    category: '운동생리학' // 객관식과 같은 카테고리 사용
+  });
+  const [subjectiveQuestions, setSubjectiveQuestions] = useState<SubjectiveQuestion[]>([]);
   
   // ConfirmModal 상태
   const [confirmModal, setConfirmModal] = useState<{
@@ -611,13 +635,215 @@ export default function QuizQuestionGeneratorPage() {
   "optionCount": 4
 }`;
 
+  // 주관식 문제 생성
+  const handleGenerateSubjectiveQuestions = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      // JSON 입력 모드
+      if (subjectiveInputMode === 'json') {
+        try {
+          const parsed = JSON.parse(subjectiveJsonInput);
+          
+          // 배열인지 단일 객체인지 확인
+          const questionsArray = Array.isArray(parsed) ? parsed : [parsed];
+          
+          // JSON 형식 검증
+          const validQuestions: SubjectiveQuestion[] = [];
+          for (const q of questionsArray) {
+            if (!q.핵심_키워드 || !q.주관식_질문 || !q.정답_상세_내용) {
+              throw new Error('JSON 형식이 올바르지 않습니다. (필수 필드: 핵심_키워드, 주관식_질문, 정답_상세_내용)');
+            }
+            
+            const isTwoStep = !!(q.정답_1차 && q.정답_2차);
+            validQuestions.push({
+              핵심_키워드: q.핵심_키워드,
+              문제_유형: q.문제_유형 || '개념 서술',
+              주관식_질문: q.주관식_질문,
+              정답_상세_내용: q.정답_상세_내용,
+              정답_1차: q.정답_1차,
+              정답_2차: q.정답_2차,
+              isTwoStep: isTwoStep
+            });
+          }
+          
+          if (validQuestions.length === 0) {
+            throw new Error('유효한 문제가 없습니다.');
+          }
+          
+          setSubjectiveQuestions(validQuestions);
+          setStep('result');
+          setLoading(false);
+          return;
+        } catch (error: any) {
+          if (error.message.includes('JSON 형식') || error.message.includes('유효한 문제')) {
+            throw error;
+          }
+          alert('JSON 형식이 올바르지 않습니다. JSON을 확인해주세요.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 텍스트 분석 모드
+      if (!subjectiveInput.textbookContent.trim()) {
+        alert('교재 내용을 입력해주세요.');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/quiz-question-generator/generate-subjective-questions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(subjectiveInput)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || '문제 생성 중 오류가 발생했습니다.');
+      }
+
+      const data = await response.json();
+      setSubjectiveQuestions(data.data.questions);
+      setStep('result');
+    } catch (error: any) {
+      logger.error('주관식 문제 생성 실패:', error);
+      alert(error.message || '문제 생성 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 주관식 문제 저장 (객관식과 같은 카테고리로 저장 가능)
+  const handleSaveSubjectiveQuiz = async () => {
+    try {
+      if (!subjectiveQuestions || subjectiveQuestions.length === 0) {
+        alert('저장할 문제가 없습니다.');
+        return;
+      }
+
+      if (!subjectiveInput.category) {
+        alert('카테고리를 선택해주세요.');
+        return;
+      }
+
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/quiz-question-generator/save-subjective-quiz', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          subjectiveQuestions: subjectiveQuestions.map(q => ({
+            ...q,
+            section: subjectiveInput.section,
+            topic: subjectiveInput.topic
+          })),
+          title: `${subjectiveInput.category} 관련 문제 세트`,
+          description: `${subjectiveQuestions.length}개의 주관식 문제가 포함된 세트입니다.`,
+          category: subjectiveInput.category,
+          tags: [subjectiveInput.category, '주관식', '자동생성']
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || '퀴즈 저장 중 오류가 발생했습니다.');
+      }
+
+      const result = await response.json();
+      alert(result.message || '주관식 문제가 저장되었습니다.');
+      setStep('saved');
+    } catch (error: any) {
+      logger.error('주관식 퀴즈 저장 실패:', error);
+      alert(error.message || '퀴즈 저장 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // JSON 내보내기
+  const handleExportJSON = () => {
+    const json = JSON.stringify(subjectiveQuestions, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `subjective-questions-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // CSV 내보내기 (Sheets용)
+  const handleExportCSV = () => {
+    const headers = ['핵심_키워드', '문제_유형', '주관식_질문', '정답_상세_내용'];
+    const rows = subjectiveQuestions.map(q => [
+      q.핵심_키워드,
+      q.문제_유형,
+      q.주관식_질문,
+      q.정답_상세_내용.replace(/\n/g, ' ')
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `subjective-questions-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <PageHeader
         title="퀴즈 문제 자동 생성"
-        description="정답 Pool과 오답 Pool을 입력하면 문제은행 로직으로 다양한 문제를 자동 생성합니다."
+        description={mode === 'multiple-choice' 
+          ? "정답 Pool과 오답 Pool을 입력하면 객관식 문제을 자동 생성합니다."
+          : "교재 텍스트를 입력하면 주관식/구술 시험 대비용 문제을 자동 생성합니다."}
         className="mb-6"
       />
+
+      {/* 모드 선택 */}
+      <div className="mb-6 flex space-x-4">
+        <Button
+          onClick={() => {
+            setMode('multiple-choice');
+            setStep('input');
+            setSubjectiveQuestions([]);
+          }}
+          variant={mode === 'multiple-choice' ? 'default' : 'outline'}
+        >
+          객관식 문제 생성
+        </Button>
+        <Button
+          onClick={() => {
+            setMode('subjective');
+            setStep('input');
+            setSubjectiveQuestions([]);
+          }}
+          variant={mode === 'subjective' ? 'default' : 'outline'}
+        >
+          주관식 문제 생성
+        </Button>
+      </div>
 
       {/* 단계 표시 */}
       <div className="mb-6 flex items-center justify-center space-x-4">
@@ -643,8 +869,182 @@ export default function QuizQuestionGeneratorPage() {
         </div>
       </div>
 
-      {/* 1단계: 입력 */}
-      {step === 'input' && (
+      {/* 1단계: 입력 - 주관식 모드 */}
+      {step === 'input' && mode === 'subjective' && (
+        <Card className="p-6">
+          <h2 className="text-xl font-bold mb-4">주관식 문제 생성</h2>
+          
+          {/* 입력 모드 선택 */}
+          <div className="mb-4 flex space-x-4">
+            <Button
+              onClick={() => setSubjectiveInputMode('text')}
+              variant={subjectiveInputMode === 'text' ? 'default' : 'outline'}
+            >
+              텍스트 분석
+            </Button>
+            <Button
+              onClick={() => setSubjectiveInputMode('json')}
+              variant={subjectiveInputMode === 'json' ? 'default' : 'outline'}
+            >
+              JSON 입력
+            </Button>
+          </div>
+
+          {subjectiveInputMode === 'json' && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                💡 <strong>JSON 형식:</strong> 주관식 문제를 JSON 배열 또는 단일 객체로 입력하세요.
+                <br />
+                <span className="text-xs text-blue-600">
+                  예시: <code>[{'{'} "핵심_키워드": "...", "문제_유형": "...", "주관식_질문": "...", "정답_상세_내용": "..." {'}'}]</code>
+                </span>
+              </p>
+            </div>
+          )}
+
+          {subjectiveInputMode === 'text' && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                💡 <strong>사용 방법:</strong> 교재의 텍스트 내용을 복사하여 붙여넣으세요.
+                <br />
+                <span className="text-xs text-blue-600">
+                  시스템이 자동으로 핵심 개념을 추출하여 주관식 문제를 생성합니다.
+                </span>
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">카테고리 *</label>
+                <select
+                  className="w-full p-3 border rounded-lg"
+                  value={subjectiveInput.category}
+                  onChange={(e) => setSubjectiveInput(prev => ({ ...prev, category: e.target.value }))}
+                >
+                  {QUIZ_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 객관식 문제와 같은 카테고리를 선택하면 한 과목에 함께 저장됩니다.
+                </p>
+              </div>
+              {subjectiveInputMode === 'text' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">최소 문제 개수</label>
+                  <Input
+                    type="number"
+                    min="3"
+                    max="20"
+                    value={subjectiveInput.minQuestions}
+                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, minQuestions: parseInt(e.target.value) || 3 }))}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* JSON 입력 모드 */}
+            {subjectiveInputMode === 'json' ? (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">JSON 입력 *</label>
+                  <Button
+                    onClick={() => {
+                      const example = `[
+  {
+    "핵심_키워드": "굴곡-신전운동",
+    "문제_유형": "개념 서술",
+    "주관식_질문": "관절의 운동을 굴곡과 신전으로 나누어 서술하시오.",
+    "정답_상세_내용": "굴곡(flexion)은 관절 각도가 감소하는 운동으로, 신체 부위가 몸의 중심 쪽으로 접근하는 움직임이다. 신전(extension)은 관절 각도가 증가하는 운동으로, 굴곡된 부위를 원래 위치로 되돌리는 움직임이다. 이 두 운동은 대부분의 관절에서 기본적인 운동 범위를 형성한다.",
+    "정답_1차": "굴곡과 신전",
+    "정답_2차": "굴곡(flexion)은 관절 각도가 감소하는 운동으로, 신체 부위가 몸의 중심 쪽으로 접근하는 움직임이다. 신전(extension)은 관절 각도가 증가하는 운동으로, 굴곡된 부위를 원래 위치로 되돌리는 움직임이다."
+  },
+  {
+    "핵심_키워드": "지레의 종류",
+    "문제_유형": "분류/종류",
+    "주관식_질문": "인체에서 작용하는 지레의 종류를 나열하고 각각의 특징을 설명하시오.",
+    "정답_상세_내용": "1급 지레: 힘점과 저항점 사이에 지지점이 위치하며, 균형과 안정성에 유리하다. 2급 지레: 저항점이 힘점과 지지점 사이에 위치하며, 작은 힘으로 큰 저항을 이길 수 있다. 3급 지레: 힘점이 저항점과 지지점 사이에 위치하며, 속도와 범위에 유리하다."
+  }
+]`;
+                      setSubjectiveJsonInput(example);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    예시 불러오기
+                  </Button>
+                </div>
+                <textarea
+                  className="w-full p-3 border rounded-lg font-mono text-sm"
+                  rows={20}
+                  value={subjectiveJsonInput}
+                  onChange={(e) => setSubjectiveJsonInput(e.target.value)}
+                  placeholder="JSON 형식으로 주관식 문제를 입력하세요..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  입력된 글자 수: {subjectiveJsonInput.length}자
+                </p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">섹션/장 이름 (선택사항)</label>
+                  <Input
+                    value={subjectiveInput.section}
+                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, section: e.target.value }))}
+                    placeholder="예: 제1장 관절의 운동"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">소주제 (선택사항)</label>
+                  <Input
+                    value={subjectiveInput.topic}
+                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, topic: e.target.value }))}
+                    placeholder="예: 굴곡과 신전"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    교재 텍스트 내용 *
+                    <span className="ml-2 text-xs text-gray-500">(최소 200자 이상 권장)</span>
+                  </label>
+                  <textarea
+                    className="w-full p-3 border rounded-lg font-mono text-sm"
+                    rows={20}
+                    value={subjectiveInput.textbookContent}
+                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, textbookContent: e.target.value }))}
+                    placeholder="교재의 텍스트 내용을 여기에 붙여넣으세요..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    입력된 글자 수: {subjectiveInput.textbookContent.length}자
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          <Button
+            onClick={handleGenerateSubjectiveQuestions}
+            disabled={
+              loading || 
+              (subjectiveInputMode === 'json' 
+                ? !subjectiveJsonInput.trim() || !subjectiveInput.category
+                : !subjectiveInput.textbookContent.trim() || !subjectiveInput.category)
+            }
+            className="w-full mt-4"
+          >
+            {loading 
+              ? '처리 중...' 
+              : subjectiveInputMode === 'json' 
+                ? 'JSON에서 문제 불러오기' 
+                : '주관식 문제 생성'}
+          </Button>
+        </Card>
+      )}
+
+      {/* 1단계: 입력 - 객관식 모드 */}
+      {step === 'input' && mode === 'multiple-choice' && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">
@@ -1259,6 +1659,153 @@ export default function QuizQuestionGeneratorPage() {
                   새로 시작
                 </Button>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 주관식 문제 결과 표시 */}
+      {step === 'result' && mode === 'subjective' && subjectiveQuestions.length > 0 && (
+        <div className="space-y-6">
+          <Card className="p-6 bg-green-50 border-green-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-green-800">
+                  생성된 주관식 문제 ({subjectiveQuestions.length}개)
+                </h2>
+                <p className="text-sm text-green-600 mt-1">카테고리: {subjectiveInput.category}</p>
+                {subjectiveInput.section && (
+                  <p className="text-sm text-green-600">섹션: {subjectiveInput.section}</p>
+                )}
+                {subjectiveInput.topic && (
+                  <p className="text-sm text-green-600">주제: {subjectiveInput.topic}</p>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleExportJSON}
+                  variant="outline"
+                  size="sm"
+                >
+                  📄 JSON 내보내기
+                </Button>
+                <Button
+                  onClick={handleExportCSV}
+                  variant="outline"
+                  size="sm"
+                >
+                  📊 Sheets 내보내기
+                </Button>
+                <Button
+                  onClick={handleSaveSubjectiveQuiz}
+                  disabled={loading}
+                  variant="default"
+                  size="sm"
+                >
+                  {loading ? '저장 중...' : '퀴즈로 저장'}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setStep('input');
+                    setSubjectiveQuestions([]);
+                    setSubjectiveInput(prev => ({
+                      ...prev,
+                      textbookContent: '',
+                      section: '',
+                      topic: ''
+                    }));
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  새로 시작
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* 코넬 노트 형식 표시 */}
+          <div className="space-y-4">
+            {subjectiveQuestions.map((question, idx) => (
+              <Card key={idx} className="p-6 shadow-lg border-2 border-blue-200">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 핵심(Cue) 영역 */}
+                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600">
+                    <div className="text-xs font-semibold text-blue-600 mb-2">핵심 키워드</div>
+                    <div className="text-lg font-bold text-blue-900 mb-4">{question.핵심_키워드}</div>
+                    <div className="text-xs font-semibold text-blue-600 mb-2">문제 유형</div>
+                    <Badge className="bg-blue-600 text-white mb-4">{question.문제_유형}</Badge>
+                    <div className="text-xs font-semibold text-blue-600 mb-2">주관식 질문</div>
+                    <div className="text-gray-800 font-medium">{question.주관식_질문}</div>
+                  </div>
+                  
+                  {/* 필기(Note) 영역 */}
+                  <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-gray-400">
+                    {question.isTwoStep ? (
+                      <>
+                        <div className="text-xs font-semibold text-gray-600 mb-2">1차 답변 (중제목/핵심)</div>
+                        <div className="text-gray-800 font-semibold mb-4 bg-yellow-50 p-2 rounded">
+                          {question.정답_1차}
+                        </div>
+                        <div className="text-xs font-semibold text-gray-600 mb-2">2차 답변 (세부사항)</div>
+                        <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                          {question.정답_2차}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-xs font-semibold text-gray-600 mb-2">정답 상세 내용</div>
+                        <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                          {question.정답_상세_내용}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* 테이블 형식 미리보기 */}
+          <Card className="p-6">
+            <h3 className="text-lg font-bold mb-4">코넬 노트 형식 테이블</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-100">
+                    <th className="border border-gray-300 p-3 text-left">핵심 키워드</th>
+                    <th className="border border-gray-300 p-3 text-left">문제 유형</th>
+                    <th className="border border-gray-300 p-3 text-left">주관식 질문</th>
+                    <th className="border border-gray-300 p-3 text-left">
+                      {subjectiveQuestions.some(q => q.isTwoStep) ? '1차 답변 / 2차 답변' : '정답 상세 내용'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subjectiveQuestions.map((question, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="border border-gray-300 p-3 font-semibold text-blue-900">
+                        {question.핵심_키워드}
+                      </td>
+                      <td className="border border-gray-300 p-3">
+                        <Badge>{question.문제_유형}</Badge>
+                        {question.isTwoStep && <Badge className="ml-1 bg-green-600">2단계</Badge>}
+                      </td>
+                      <td className="border border-gray-300 p-3">{question.주관식_질문}</td>
+                      <td className="border border-gray-300 p-3 whitespace-pre-wrap text-sm">
+                        {question.isTwoStep ? (
+                          <div>
+                            <div className="font-semibold text-yellow-700 mb-1">1차: {question.정답_1차}</div>
+                            <div className="text-gray-600">2차: {question.정답_2차}</div>
+                          </div>
+                        ) : (
+                          question.정답_상세_내용
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </Card>
         </div>

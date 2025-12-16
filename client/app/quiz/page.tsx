@@ -43,9 +43,15 @@ interface Quiz {
 interface Question {
   _id: string;
   question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
+  type?: 'multiple-choice' | 'short-answer' | 'ox'; // 문제 타입
+  options?: string[]; // 객관식용
+  correctAnswer: number | string | string[]; // 객관식: 인덱스, 주관식: 정답 텍스트 또는 [1차 답변, 2차 답변]
+  explanation?: string;
+  metadata?: {
+    isTwoStep?: boolean; // 2단계 답변 여부
+    정답_1차?: string;
+    정답_2차?: string;
+  };
 }
 
 interface QuizAttempt {
@@ -64,13 +70,14 @@ export default function QuizPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<(number | string | string[])[]>([]); // 2단계 답변은 배열로 저장
   const [timeLeft, setTimeLeft] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [useRandomMode, setUseRandomMode] = useState(false); // 🎲 랜덤 모드 선택
+  const [questionTypeFilter, setQuestionTypeFilter] = useState<'all' | 'multiple-choice' | 'short-answer'>('all'); // 문제 타입 필터
 
   // 게스트는 게스트 퀴즈 페이지로 리다이렉트
   useEffect(() => {
@@ -187,35 +194,52 @@ export default function QuizPage() {
   };
 
   const startQuiz = (quiz: Quiz) => {
+    // 문제 타입 필터링
+    let filteredQuestions = quiz.questions;
+    if (questionTypeFilter !== 'all') {
+      filteredQuestions = quiz.questions.filter((q: any) => {
+        const questionType = q.type || 'multiple-choice'; // 기본값: 객관식
+        return questionType === questionTypeFilter;
+      });
+    }
+
+    if (filteredQuestions.length === 0) {
+      alert(`선택한 문제 타입(${questionTypeFilter === 'multiple-choice' ? '객관식' : '주관식'})의 문제가 없습니다.`);
+      return;
+    }
+
     // 🎲 랜덤 모드: 사용자가 선택한 경우에만 보기 순서 섞기
-    const processedQuiz = useRandomMode ? {
-      ...quiz,
-      questions: quiz.questions.map((q: any) => {
-        if (q.type === 'multiple-choice' || q.type === 'ox') {
-          // 보기 순서 섞기
-          const shuffled = [...q.options].map((opt, idx) => ({ opt, idx }));
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          
-          // 새로운 정답 인덱스 찾기
-          const newCorrectIndex = shuffled.findIndex(item => item.idx === q.correctAnswer);
-          
-          return {
-            ...q,
-            options: shuffled.map(item => item.opt),
-            correctAnswer: newCorrectIndex,
-            _originalCorrectAnswer: q.correctAnswer
-          };
+    const processedQuestions = useRandomMode ? filteredQuestions.map((q: any) => {
+      if (q.type === 'multiple-choice' || q.type === 'ox') {
+        // 보기 순서 섞기
+        const shuffled = [...(q.options || [])].map((opt, idx) => ({ opt, idx }));
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        return q;
-      })
-    } : quiz;
+        
+        // 새로운 정답 인덱스 찾기
+        const newCorrectIndex = shuffled.findIndex(item => item.idx === q.correctAnswer);
+        
+        return {
+          ...q,
+          options: shuffled.map(item => item.opt),
+          correctAnswer: newCorrectIndex,
+          _originalCorrectAnswer: q.correctAnswer
+        };
+      }
+      return q;
+    }) : filteredQuestions;
+    
+    const processedQuiz = {
+      ...quiz,
+      questions: processedQuestions
+    };
     
     setSelectedQuiz(processedQuiz);
     setCurrentQuestionIndex(0);
-    setAnswers(new Array(quiz.questions.length).fill(-1));
+    // 초기 답안 배열 생성 (객관식: -1, 주관식: '')
+    setAnswers(processedQuestions.map((q: any) => q.type === 'short-answer' ? '' : -1));
     setTimeLeft(quiz.timeLimit * 60); // 초 단위로 변환
     setQuizStarted(true);
     setQuizCompleted(false);
@@ -239,6 +263,25 @@ export default function QuizPage() {
     setAnswers(newAnswers);
   };
 
+  const handleSubjectiveAnswer = (answerText: string, step?: 1 | 2) => {
+    const newAnswers = [...answers];
+    const currentQuestion = selectedQuiz?.questions[currentQuestionIndex];
+    const isTwoStep = Array.isArray(currentQuestion?.correctAnswer) || currentQuestion?.metadata?.isTwoStep;
+    
+    if (isTwoStep && step) {
+      // 2단계 답변: 배열로 저장
+      const currentAnswer = Array.isArray(newAnswers[currentQuestionIndex]) 
+        ? [...(newAnswers[currentQuestionIndex] as string[])]
+        : ['', ''];
+      currentAnswer[step - 1] = answerText;
+      newAnswers[currentQuestionIndex] = currentAnswer;
+    } else {
+      // 1단계 답변: 문자열로 저장
+      newAnswers[currentQuestionIndex] = answerText;
+    }
+    setAnswers(newAnswers);
+  };
+
   const nextQuestion = () => {
     if (currentQuestionIndex < selectedQuiz!.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -251,7 +294,34 @@ export default function QuizPage() {
     if (!selectedQuiz) return;
 
     const correctAnswers = answers.reduce((count, answer, index) => {
-      return count + (answer === selectedQuiz.questions[index].correctAnswer ? 1 : 0);
+      const question = selectedQuiz.questions[index];
+      if (question.type === 'short-answer') {
+        const isTwoStep = Array.isArray(question.correctAnswer) || question.metadata?.isTwoStep;
+        
+        if (isTwoStep) {
+          // 2단계 답변: 1차와 2차 모두 정답이어야 맞음
+          const correctAnswers = Array.isArray(question.correctAnswer) 
+            ? question.correctAnswer 
+            : [question.metadata?.정답_1차 || '', question.metadata?.정답_2차 || ''];
+          const userAnswers = Array.isArray(answer) ? answer : ['', ''];
+          
+          const firstCorrect = userAnswers[0]?.trim().toLowerCase() === correctAnswers[0]?.trim().toLowerCase();
+          const secondCorrect = userAnswers[1]?.trim().toLowerCase() === correctAnswers[1]?.trim().toLowerCase();
+          
+          // 둘 다 맞아야 정답 (부분 점수 없음)
+          return count + (firstCorrect && secondCorrect ? 1 : 0);
+        } else {
+          // 1단계 답변: 정답 텍스트 비교 (대소문자 무시, 공백 제거)
+          const userAnswer = typeof answer === 'string' ? answer.trim().toLowerCase() : '';
+          const correctAnswer = typeof question.correctAnswer === 'string' 
+            ? question.correctAnswer.trim().toLowerCase() 
+            : '';
+          return count + (userAnswer === correctAnswer ? 1 : 0);
+        }
+      } else {
+        // 객관식: 인덱스 비교
+        return count + (answer === question.correctAnswer ? 1 : 0);
+      }
     }, 0);
 
     const score = Math.round((correctAnswers / selectedQuiz.questions.length) * 100);
@@ -378,7 +448,33 @@ export default function QuizPage() {
                 <div className="space-y-4 text-left">
                   {selectedQuiz?.questions.map((question, index) => {
                     const userAnswer = answers[index];
-                    const isCorrect = userAnswer === question.correctAnswer;
+                    const isSubjective = question.type === 'short-answer';
+                    let isCorrect = false;
+                    
+                    if (isSubjective) {
+                      const isTwoStep = Array.isArray(question.correctAnswer) || question.metadata?.isTwoStep;
+                      
+                      if (isTwoStep) {
+                        // 2단계 답변 채점
+                        const correctAnswers = Array.isArray(question.correctAnswer) 
+                          ? question.correctAnswer 
+                          : [question.metadata?.정답_1차 || '', question.metadata?.정답_2차 || ''];
+                        const userAnswers = Array.isArray(userAnswer) ? userAnswer : ['', ''];
+                        
+                        const firstCorrect = userAnswers[0]?.trim().toLowerCase() === correctAnswers[0]?.trim().toLowerCase();
+                        const secondCorrect = userAnswers[1]?.trim().toLowerCase() === correctAnswers[1]?.trim().toLowerCase();
+                        isCorrect = firstCorrect && secondCorrect;
+                      } else {
+                        // 1단계 답변 채점
+                        const userAnswerText = typeof userAnswer === 'string' ? userAnswer.trim().toLowerCase() : '';
+                        const correctAnswerText = typeof question.correctAnswer === 'string' 
+                          ? question.correctAnswer.trim().toLowerCase() 
+                          : '';
+                        isCorrect = userAnswerText === correctAnswerText;
+                      }
+                    } else {
+                      isCorrect = userAnswer === question.correctAnswer;
+                    }
                     
                     return (
                       <div key={question._id} className={`p-4 rounded-lg border ${
@@ -391,14 +487,56 @@ export default function QuizPage() {
                             {isCorrect ? '정답' : '오답'}
                           </span>
                           <span className="ml-2 text-sm text-gray-600">문제 {index + 1}</span>
+                          {isSubjective && <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs">주관식</span>}
                         </div>
                         <p className="font-medium text-gray-900 mb-2">{question.question}</p>
-                        <p className="text-sm text-gray-600">
-                          <strong>정답:</strong> {question.options[question.correctAnswer]}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          <strong>해설:</strong> {question.explanation}
-                        </p>
+                        {isSubjective ? (() => {
+                          const isTwoStep = Array.isArray(question.correctAnswer) || question.metadata?.isTwoStep;
+                          
+                          if (isTwoStep) {
+                            const correctAnswers = Array.isArray(question.correctAnswer) 
+                              ? question.correctAnswer 
+                              : [question.metadata?.정답_1차 || '', question.metadata?.정답_2차 || ''];
+                            const userAnswers = Array.isArray(userAnswer) ? userAnswer : ['', ''];
+                            
+                            return (
+                              <>
+                                <p className="text-sm text-gray-600 mb-2">
+                                  <strong>내 1차 답:</strong> {userAnswers[0] || '(미입력)'}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-2">
+                                  <strong>정답 1차:</strong> {correctAnswers[0]}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-2">
+                                  <strong>내 2차 답:</strong> {userAnswers[1] || '(미입력)'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  <strong>정답 2차:</strong> {correctAnswers[1]}
+                                </p>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <>
+                                <p className="text-sm text-gray-600 mb-1">
+                                  <strong>내 답:</strong> {typeof userAnswer === 'string' ? userAnswer : '(미입력)'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  <strong>정답:</strong> {typeof question.correctAnswer === 'string' ? question.correctAnswer : ''}
+                                </p>
+                              </>
+                            );
+                          }
+                        })() : (
+                          <p className="text-sm text-gray-600">
+                            <strong>정답:</strong> {question.options && question.options[question.correctAnswer as number]}
+                          </p>
+                        )}
+                        {question.explanation && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            <strong>해설:</strong> {question.explanation}
+                          </p>
+                        )}
                       </div>
                     );
                   })}
@@ -431,6 +569,7 @@ export default function QuizPage() {
   if (quizStarted && selectedQuiz) {
     const currentQuestion = selectedQuiz.questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / selectedQuiz.questions.length) * 100;
+    const isSubjective = currentQuestion.type === 'short-answer';
 
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
@@ -440,6 +579,16 @@ export default function QuizPage() {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-gray-700">
                 문제 {currentQuestionIndex + 1} / {selectedQuiz.questions.length}
+                {isSubjective && (() => {
+                  const isTwoStep = Array.isArray(currentQuestion.correctAnswer) || currentQuestion.metadata?.isTwoStep;
+                  return (
+                    <>
+                      <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">주관식</span>
+                      {isTwoStep && <span className="ml-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs">2단계</span>}
+                    </>
+                  );
+                })()}
+                {!isSubjective && <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">객관식</span>}
               </span>
               <span className={`text-sm font-medium ${
                 timeLeft < 60 ? 'text-red-600' : 'text-gray-700'
@@ -461,23 +610,76 @@ export default function QuizPage() {
                 {currentQuestion.question}
               </h2>
 
-              <div className="space-y-3 mb-6">
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${
-                      answers[currentQuestionIndex] === index
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <span className="font-medium text-gray-700">
-                      {String.fromCharCode(65 + index)}. {option}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {/* 객관식 문제 */}
+              {!isSubjective && currentQuestion.options && (
+                <div className="space-y-3 mb-6">
+                  {currentQuestion.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(index)}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${
+                        answers[currentQuestionIndex] === index
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="font-medium text-gray-700">
+                        {String.fromCharCode(65 + index)}. {option}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 주관식 문제 */}
+              {isSubjective && (() => {
+                const currentQuestion = selectedQuiz.questions[currentQuestionIndex];
+                const isTwoStep = Array.isArray(currentQuestion.correctAnswer) || currentQuestion.metadata?.isTwoStep;
+                const currentAnswer = answers[currentQuestionIndex];
+                
+                if (isTwoStep) {
+                  // 2단계 답변 입력
+                  const answerArray = Array.isArray(currentAnswer) ? currentAnswer : ['', ''];
+                  return (
+                    <div className="mb-6 space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          1차 답변 (중제목/핵심) *
+                        </label>
+                        <textarea
+                          value={answerArray[0] || ''}
+                          onChange={(e) => handleSubjectiveAnswer(e.target.value, 1)}
+                          placeholder="핵심 답변을 입력하세요 (예: 굴곡과 신전)"
+                          className="w-full p-4 border-2 border-yellow-300 rounded-lg focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 min-h-[100px] resize-y bg-yellow-50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          2차 답변 (세부사항) *
+                        </label>
+                        <textarea
+                          value={answerArray[1] || ''}
+                          onChange={(e) => handleSubjectiveAnswer(e.target.value, 2)}
+                          placeholder="세부사항을 입력하세요..."
+                          className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-[150px] resize-y"
+                        />
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // 1단계 답변 입력
+                  return (
+                    <div className="mb-6">
+                      <textarea
+                        value={typeof currentAnswer === 'string' ? currentAnswer : ''}
+                        onChange={(e) => handleSubjectiveAnswer(e.target.value)}
+                        placeholder="답안을 입력하세요..."
+                        className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-[150px] resize-y"
+                      />
+                    </div>
+                  );
+                }
+              })()}
 
               <div className="flex justify-between">
                 <Button
@@ -489,7 +691,10 @@ export default function QuizPage() {
                 </Button>
                 <Button
                   onClick={nextQuestion}
-                  disabled={answers[currentQuestionIndex] === -1}
+                  disabled={isSubjective 
+                    ? !answers[currentQuestionIndex] || (typeof answers[currentQuestionIndex] === 'string' && answers[currentQuestionIndex].trim() === '')
+                    : answers[currentQuestionIndex] === -1
+                  }
                   variant="primary"
                   size="md"
                 >
@@ -512,9 +717,54 @@ export default function QuizPage() {
           className="mb-8"
         />
         
-        <div className="mb-8">
+        <div className="mb-8 space-y-4">
+          {/* 문제 타입 필터 */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="font-semibold text-blue-900 text-sm mb-3">
+              📝 문제 타입 선택
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="questionTypeFilter"
+                  value="all"
+                  checked={questionTypeFilter === 'all'}
+                  onChange={(e) => setQuestionTypeFilter(e.target.value as any)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-blue-800">전체 (객관식 + 주관식)</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="questionTypeFilter"
+                  value="multiple-choice"
+                  checked={questionTypeFilter === 'multiple-choice'}
+                  onChange={(e) => setQuestionTypeFilter(e.target.value as any)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-blue-800">객관식만</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="questionTypeFilter"
+                  value="short-answer"
+                  checked={questionTypeFilter === 'short-answer'}
+                  onChange={(e) => setQuestionTypeFilter(e.target.value as any)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-blue-800">주관식만</span>
+              </label>
+            </div>
+            <p className="text-xs text-blue-700 mt-2">
+              💡 선택한 문제 타입만 퀴즈에 포함됩니다.
+            </p>
+          </div>
+
           {/* 랜덤 모드 선택 */}
-          <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <label className="flex items-center space-x-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -551,13 +801,29 @@ export default function QuizPage() {
 
                 <div className="space-y-2 mb-4">
                   <div className="text-sm text-gray-500">
-                    📝 문제 수: {quiz.questions.length}개
+                    📝 전체 문제 수: {quiz.questions.length}개
+                    {questionTypeFilter !== 'all' && (
+                      <span className="ml-2 text-blue-600">
+                        (필터 적용 시: {
+                          quiz.questions.filter((q: any) => {
+                            const questionType = q.type || 'multiple-choice';
+                            return questionTypeFilter === 'all' || questionType === questionTypeFilter;
+                          }).length
+                        }개)
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     ⏰ 제한 시간: {quiz.timeLimit}분
                   </div>
                   <div className="text-sm text-gray-500">
                     📂 카테고리: {quiz.category}
+                  </div>
+                  {/* 문제 타입 통계 */}
+                  <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-200">
+                    객관식: {quiz.questions.filter((q: any) => (q.type || 'multiple-choice') === 'multiple-choice').length}개
+                    {' | '}
+                    주관식: {quiz.questions.filter((q: any) => q.type === 'short-answer').length}개
                   </div>
                 </div>
 
