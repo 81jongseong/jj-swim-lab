@@ -70,7 +70,7 @@ export default function QuizPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<(number | string | string[])[]>([]); // 2단계 답변은 배열로 저장
+  const [answers, setAnswers] = useState<(number | string | string[])[]>([]); // 객관식만 입력, 주관식은 스텝 미리보기
   const [timeLeft, setTimeLeft] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -78,6 +78,30 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false); // 초기 로딩 비활성화
   const [useRandomMode, setUseRandomMode] = useState(false); // 🎲 랜덤 모드 선택
   const [questionTypeFilter, setQuestionTypeFilter] = useState<'all' | 'multiple-choice' | 'short-answer'>('all'); // 문제 타입 필터
+  const [revealSteps, setRevealSteps] = useState<Array<{ step1: boolean; step2: boolean }>>([]); // 주관식 단계별 공개 상태
+
+  const renderFormatted = (text?: string) => {
+    if (!text) return null;
+
+    // 숫자 패턴이 있으면 원본 번호를 유지한 채 줄로 나눠서 표시
+    const parts = text
+      .split(/(?=\s*\d+\))/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    if (parts.length > 1) {
+      return (
+        <div className="space-y-2 whitespace-pre-wrap break-words leading-7">
+          {parts.map((p, idx) => (
+            <div key={idx}>{p}</div>
+          ))}
+        </div>
+      );
+    }
+
+    // 단일 항목은 그대로 줄바꿈 유지
+    return <div className="whitespace-pre-wrap break-words leading-7">{text}</div>;
+  };
 
   // 게스트는 게스트 퀴즈 페이지로 리다이렉트
   useEffect(() => {
@@ -238,8 +262,9 @@ export default function QuizPage() {
     
     setSelectedQuiz(processedQuiz);
     setCurrentQuestionIndex(0);
-    // 초기 답안 배열 생성 (객관식: -1, 주관식: '')
+    // 초기 답안/공개 상태 생성 (객관식: -1, 주관식: 입력 없이 안내용)
     setAnswers(processedQuestions.map((q: any) => q.type === 'short-answer' ? '' : -1));
+    setRevealSteps(processedQuestions.map(() => ({ step1: false, step2: false })));
     setTimeLeft(quiz.timeLimit * 60); // 초 단위로 변환
     setQuizStarted(true);
     setQuizCompleted(false);
@@ -263,24 +288,7 @@ export default function QuizPage() {
     setAnswers(newAnswers);
   };
 
-  const handleSubjectiveAnswer = (answerText: string, step?: 1 | 2) => {
-    const newAnswers = [...answers];
-    const currentQuestion = selectedQuiz?.questions[currentQuestionIndex];
-    const isTwoStep = Array.isArray(currentQuestion?.correctAnswer) || currentQuestion?.metadata?.isTwoStep;
-    
-    if (isTwoStep && step) {
-      // 2단계 답변: 배열로 저장
-      const currentAnswer = Array.isArray(newAnswers[currentQuestionIndex]) 
-        ? [...(newAnswers[currentQuestionIndex] as string[])]
-        : ['', ''];
-      currentAnswer[step - 1] = answerText;
-      newAnswers[currentQuestionIndex] = currentAnswer;
-    } else {
-      // 1단계 답변: 문자열로 저장
-      newAnswers[currentQuestionIndex] = answerText;
-    }
-    setAnswers(newAnswers);
-  };
+  // 주관식은 입력 없이 정답 스텝 안내만 표시
 
   const nextQuestion = () => {
     if (currentQuestionIndex < selectedQuiz!.questions.length - 1) {
@@ -296,28 +304,8 @@ export default function QuizPage() {
     const correctAnswers = answers.reduce((count, answer, index) => {
       const question = selectedQuiz.questions[index];
       if (question.type === 'short-answer') {
-        const isTwoStep = Array.isArray(question.correctAnswer) || question.metadata?.isTwoStep;
-        
-        if (isTwoStep) {
-          // 2단계 답변: 1차와 2차 모두 정답이어야 맞음
-          const correctAnswers = Array.isArray(question.correctAnswer) 
-            ? question.correctAnswer 
-            : [question.metadata?.정답_1차 || '', question.metadata?.정답_2차 || ''];
-          const userAnswers = Array.isArray(answer) ? answer : ['', ''];
-          
-          const firstCorrect = userAnswers[0]?.trim().toLowerCase() === correctAnswers[0]?.trim().toLowerCase();
-          const secondCorrect = userAnswers[1]?.trim().toLowerCase() === correctAnswers[1]?.trim().toLowerCase();
-          
-          // 둘 다 맞아야 정답 (부분 점수 없음)
-          return count + (firstCorrect && secondCorrect ? 1 : 0);
-        } else {
-          // 1단계 답변: 정답 텍스트 비교 (대소문자 무시, 공백 제거)
-          const userAnswer = typeof answer === 'string' ? answer.trim().toLowerCase() : '';
-          const correctAnswer = typeof question.correctAnswer === 'string' 
-            ? question.correctAnswer.trim().toLowerCase() 
-            : '';
-          return count + (userAnswer === correctAnswer ? 1 : 0);
-        }
+        // 주관식은 입력/채점 없이 안내만 하므로 점수 계산 제외
+        return count;
       } else {
         // 객관식: 인덱스 비교
         return count + (answer === question.correctAnswer ? 1 : 0);
@@ -345,6 +333,7 @@ export default function QuizPage() {
     setSelectedQuiz(null);
     setCurrentQuestionIndex(0);
     setAnswers([]);
+    setRevealSteps([]);
     setTimeLeft(0);
     setQuizStarted(false);
     setQuizCompleted(false);
@@ -604,9 +593,9 @@ export default function QuizPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div className="p-6 md:p-7">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 leading-9 whitespace-pre-line break-words">
                 {currentQuestion.question}
               </h2>
 
@@ -617,7 +606,7 @@ export default function QuizPage() {
                     <button
                       key={index}
                       onClick={() => handleAnswerSelect(index)}
-                      className={`w-full p-4 text-left rounded-lg border-2 transition-colors ${
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-colors leading-7 break-words ${
                         answers[currentQuestionIndex] === index
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -637,45 +626,94 @@ export default function QuizPage() {
                 const isTwoStep = Array.isArray(currentQuestion.correctAnswer) || currentQuestion.metadata?.isTwoStep;
                 const currentAnswer = answers[currentQuestionIndex];
                 
+                const currentReveal = revealSteps[currentQuestionIndex] || { step1: false, step2: false };
+
                 if (isTwoStep) {
-                  // 2단계 답변 입력
-                  const answerArray = Array.isArray(currentAnswer) ? currentAnswer : ['', ''];
                   return (
-                    <div className="mb-6 space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          1차 답변 (중제목/핵심) *
-                        </label>
-                        <textarea
-                          value={answerArray[0] || ''}
-                          onChange={(e) => handleSubjectiveAnswer(e.target.value, 1)}
-                          placeholder="핵심 답변을 입력하세요 (예: 굴곡과 신전)"
-                          className="w-full p-4 border-2 border-yellow-300 rounded-lg focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 min-h-[100px] resize-y bg-yellow-50"
-                        />
+                    <div className="mb-6 space-y-3">
+                      <div className="flex gap-3 mb-4">
+                        <Button
+                          size="md"
+                          variant={currentReveal.step1 ? 'default' : 'outline'}
+                          onClick={() =>
+                            setRevealSteps(prev =>
+                              prev.map((v, idx) =>
+                                idx === currentQuestionIndex ? { ...v, step1: true } : v
+                              )
+                            )
+                          }
+                        >
+                          1차 보기
+                        </Button>
+                        <Button
+                          size="md"
+                          variant={currentReveal.step2 ? 'default' : 'outline'}
+                          disabled={!currentReveal.step1}
+                          onClick={() =>
+                            setRevealSteps(prev =>
+                              prev.map((v, idx) =>
+                                idx === currentQuestionIndex ? { ...v, step2: true } : v
+                              )
+                            )
+                          }
+                        >
+                          2차 보기
+                        </Button>
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          2차 답변 (세부사항) *
-                        </label>
-                        <textarea
-                          value={answerArray[1] || ''}
-                          onChange={(e) => handleSubjectiveAnswer(e.target.value, 2)}
-                          placeholder="세부사항을 입력하세요..."
-                          className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-[150px] resize-y"
-                        />
+
+                      <div className="p-5 border-2 border-yellow-300 rounded-lg bg-yellow-50 shadow-sm">
+                        <div className="text-sm font-semibold text-yellow-700 mb-2">1차 정답 (핵심)</div>
+                        <div className="text-gray-900 font-semibold">
+                          {currentReveal.step1
+                            ? renderFormatted(
+                                currentQuestion.metadata?.정답_1차 ||
+                                  (Array.isArray(currentQuestion.correctAnswer) ? currentQuestion.correctAnswer[0] : '')
+                              )
+                            : '클릭해서 확인'}
+                        </div>
+                      </div>
+
+                      <div className="p-5 border-2 border-blue-200 rounded-lg bg-blue-50 shadow-sm">
+                        <div className="text-sm font-semibold text-blue-700 mb-2">2차 정답 (세부)</div>
+                        <div className="text-gray-900">
+                          {currentReveal.step2
+                            ? renderFormatted(
+                                currentQuestion.metadata?.정답_2차 ||
+                                  (Array.isArray(currentQuestion.correctAnswer) ? currentQuestion.correctAnswer[1] : currentQuestion.correctAnswer)
+                              )
+                            : '1차 확인 후 클릭'}
+                        </div>
                       </div>
                     </div>
                   );
                 } else {
-                  // 1단계 답변 입력
                   return (
-                    <div className="mb-6">
-                      <textarea
-                        value={typeof currentAnswer === 'string' ? currentAnswer : ''}
-                        onChange={(e) => handleSubjectiveAnswer(e.target.value)}
-                        placeholder="답안을 입력하세요..."
-                        className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 min-h-[150px] resize-y"
-                      />
+                    <div className="mb-6 space-y-2">
+                      <Button
+                        size="md"
+                        variant={currentReveal.step1 ? 'default' : 'outline'}
+                        onClick={() =>
+                          setRevealSteps(prev =>
+                            prev.map((v, idx) =>
+                              idx === currentQuestionIndex ? { ...v, step1: true } : v
+                            )
+                          )
+                        }
+                      >
+                        정답 보기
+                      </Button>
+                      <div className="p-5 border-2 border-blue-200 rounded-lg bg-blue-50 shadow-sm">
+                        <div className="text-sm font-semibold text-blue-700 mb-2">정답</div>
+                        <div className="text-gray-900">
+                          {currentReveal.step1
+                            ? renderFormatted(
+                                typeof currentQuestion.correctAnswer === 'string'
+                                  ? currentQuestion.correctAnswer
+                                  : currentQuestion.metadata?.정답_1차 || ''
+                              )
+                            : '클릭해서 확인'}
+                        </div>
+                      </div>
                     </div>
                   );
                 }
@@ -691,10 +729,7 @@ export default function QuizPage() {
                 </Button>
                 <Button
                   onClick={nextQuestion}
-                  disabled={isSubjective 
-                    ? !answers[currentQuestionIndex] || (typeof answers[currentQuestionIndex] === 'string' && answers[currentQuestionIndex].trim() === '')
-                    : answers[currentQuestionIndex] === -1
-                  }
+                  disabled={isSubjective ? false : answers[currentQuestionIndex] === -1}
                   variant="primary"
                   size="md"
                 >

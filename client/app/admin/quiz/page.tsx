@@ -20,6 +20,8 @@ const QUIZ_CATEGORIES = [
   '기타'
 ] as const;
 
+const CUSTOM_CATEGORY_KEY = '__custom';
+
 interface Quiz {
   id: string;
   title: string;
@@ -44,6 +46,7 @@ export default function QuizManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'demo'>('all');
+  const [customCategory, setCustomCategory] = useState(''); // 직접 입력 카테고리
   
   // 생성/수정 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -187,13 +190,22 @@ export default function QuizManagementPage() {
   // 퀴즈 생성
   const handleCreate = async () => {
     try {
+      const resolvedCategory = formData.category === CUSTOM_CATEGORY_KEY ? customCategory.trim() : formData.category.trim();
+      if (!resolvedCategory) {
+        alert('카테고리를 선택하거나 직접 입력해주세요.');
+        return;
+      }
+
       const response = await fetch('http://localhost:5000/api/quiz', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          category: resolvedCategory
+        })
       });
 
       if (response.ok) {
@@ -215,13 +227,22 @@ export default function QuizManagementPage() {
     if (!editingQuiz) return;
 
     try {
+      const resolvedCategory = formData.category === CUSTOM_CATEGORY_KEY ? customCategory.trim() : formData.category.trim();
+      if (!resolvedCategory) {
+        alert('카테고리를 선택하거나 직접 입력해주세요.');
+        return;
+      }
+
       const response = await fetch(`http://localhost:5000/api/quiz/${editingQuiz.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          category: resolvedCategory
+        })
       });
 
       if (response.ok) {
@@ -287,11 +308,15 @@ export default function QuizManagementPage() {
         const data = await response.json();
         if (data.success && data.data) {
           const fullQuiz = data.data;
+          const cat = fullQuiz.category || '';
+          const isCustomCat = !QUIZ_CATEGORIES.includes(cat as any);
+          setCustomCategory(isCustomCat ? cat : '');
+
           setEditingQuiz(quiz);
           setFormData({
             title: fullQuiz.title,
             description: fullQuiz.description,
-            category: fullQuiz.category,
+            category: isCustomCat ? CUSTOM_CATEGORY_KEY : cat,
             difficulty: fullQuiz.difficulty === 'none' ? 'none' : (fullQuiz.difficulty || 'beginner'),
             type: fullQuiz.type || 'practice',
             timeLimit: fullQuiz.timeLimit || 30,
@@ -326,6 +351,7 @@ export default function QuizManagementPage() {
       questions: []
     });
     setEditingQuiz(null);
+    setCustomCategory('');
   };
 
   // 문제 폼 초기화
@@ -837,14 +863,36 @@ export default function QuizManagementPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 *</label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.category || CUSTOM_CATEGORY_KEY}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === CUSTOM_CATEGORY_KEY) {
+                        setFormData({ ...formData, category: CUSTOM_CATEGORY_KEY });
+                        setCustomCategory('');
+                      } else {
+                        setFormData({ ...formData, category: val });
+                        setCustomCategory('');
+                      }
+                    }}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     {QUIZ_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
+                    <option value={CUSTOM_CATEGORY_KEY}>직접 입력</option>
                   </select>
+                  {(formData.category === CUSTOM_CATEGORY_KEY || !formData.category) && (
+                    <Input
+                      className="mt-2"
+                      placeholder="직접 입력할 카테고리"
+                      value={customCategory}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategory(val);
+                        setFormData({ ...formData, category: val || CUSTOM_CATEGORY_KEY });
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div>

@@ -25,6 +25,8 @@ const QUIZ_CATEGORIES = [
   '기타'
 ] as const;
 
+const CUSTOM_CATEGORY_KEY = '__custom'; // 직접 입력 카테고리 표시용 키
+
 
 interface GeneratedQuestion {
   id: string;
@@ -69,6 +71,7 @@ export default function QuizQuestionGeneratorPage() {
   const [loading, setLoading] = useState(false);
   const [displayMode, setDisplayMode] = useState<'study' | 'exam'>('exam'); // 공부용: 이론 먼저, 시험용: 문제 먼저
   const [mode, setMode] = useState<'multiple-choice' | 'subjective'>('multiple-choice'); // 객관식 또는 주관식
+  const [customCategory, setCustomCategory] = useState(''); // 직접 입력 카테고리 값 (UI 표시용)
   
   // 입력 데이터 (JSON 또는 개별 입력)
   const [inputMode, setInputMode] = useState<'json' | 'form'>('json');
@@ -99,8 +102,6 @@ export default function QuizQuestionGeneratorPage() {
   // 여러 문제 생성 모드
   const [batchMode, setBatchMode] = useState(false);
   
-  // 주관식 문제 생성 모드
-  const [subjectiveInputMode, setSubjectiveInputMode] = useState<'text' | 'json'>('text'); // 텍스트 분석 또는 JSON 입력
   const [subjectiveJsonInput, setSubjectiveJsonInput] = useState(''); // JSON 입력
   const [subjectiveInput, setSubjectiveInput] = useState({
     textbookContent: '',
@@ -181,155 +182,259 @@ export default function QuizQuestionGeneratorPage() {
         // JSON 입력 파싱
         try {
           const parsed = JSON.parse(jsonInput);
-          
-          // 배열인지 단일 객체인지 확인
-          if (Array.isArray(parsed)) {
-            // 여러 문제 생성 모드
-            setBatchMode(true);
-            
-            // 기존 문제 불러오기 (카테고리별)
-            const currentCategory = quizInfo.category || '운동생리학';
-            const existingQuestions = loadQuestionsFromStorage(currentCategory);
-            const questions: GeneratedQuestion[] = [...existingQuestions]; // 기존 문제 유지
-            for (const item of parsed) {
-              const response = await fetch('http://localhost:5000/api/quiz-question-generator/generate', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(item)
-              });
+          const items = Array.isArray(parsed) ? parsed : [parsed];
 
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || `문제 생성 중 오류가 발생했습니다. (${item.id || item.topic})`);
+          // 자동 분류용 배열
+          const subjectiveBuffer: any[] = [];
+          const objectiveBuffer: any[] = [];
+
+          const pushSubjective = (entry: any, parentTitle?: string, parentType?: string) => {
+            const questionText = entry.주관식_질문 || entry.질문;
+            const answerDetail = entry.정답_상세_내용 || entry.정답;
+            const keyword = entry.핵심_키워드 || entry.target_중제목 || parentTitle;
+
+            if (!keyword || !questionText || !answerDetail) return;
+
+            subjectiveBuffer.push({
+              핵심_키워드: keyword,
+              문제_유형: entry.문제_유형 || parentType || '개념 서술',
+              주관식_질문: questionText,
+              정답_상세_내용: answerDetail,
+              정답_1차: entry.정답_1차,
+              정답_2차: entry.정답_2차
+            });
+          };
+
+          // 분류: 세부_문항 스키마/주관식/객관식
+          for (const item of items) {
+            if (item && Array.isArray(item.세부_문항)) {
+              const parentTitle = item.대제목;
+              const parentType = item.문제_유형;
+              const parentCategory = item.과목명 || item.category || item.카테고리;
+              if (parentCategory) {
+                setQuizInfo(prev => ({ ...prev, category: parentCategory }));
+              }
+              for (const sub of item.세부_문항) {
+                pushSubjective(sub, parentTitle, parentType);
+              }
+              continue;
+            }
+            if (item && Array.isArray(item.세_부문항)) {
+              const parentTitle = item.대제목;
+              const parentType = item.문제_유형;
+              const parentCategory = item.과목명 || item.category || item.카테고리;
+              if (parentCategory) {
+                setQuizInfo(prev => ({ ...prev, category: parentCategory }));
+              }
+              for (const sub of item.세_부문항) {
+                pushSubjective(sub, parentTitle, parentType);
+              }
+              continue;
+            }
+
+            const isSubjective = item?.핵심_키워드 || item?.주관식_질문;
+            if (isSubjective) {
+              pushSubjective(item);
+            } else {
+              objectiveBuffer.push(item);
+              // 객관식에도 과목명이 있으면 반영
+              const cat = item.과목명 || item.category || item.카테고리;
+              if (cat) {
+                setQuizInfo(prev => ({ ...prev, category: cat }));
+              }
+            }
+          }
+
+          // 주관식 자동 처리 (코넬식 변환 + 2단계 자동화)
+          if (subjectiveBuffer.length > 0) {
+            const validSubjectives: SubjectiveQuestion[] = [];
+            for (const q of subjectiveBuffer) {
+              if (!q.핵심_키워드 || !q.주관식_질문 || !q.정답_상세_내용) {
+                continue;
               }
 
-              const data = await response.json();
-              
-              // 원본 JSON에서 상세 정보 추출
-              let incorrectPoolDetails: Array<{ option: string; whyIncorrect?: string }> = [];
-              let conceptBlock: any = undefined;
-              let originalExplanation: any = undefined;
-              
-              if (item.incorrectPool && Array.isArray(item.incorrectPool)) {
-                incorrectPoolDetails = item.incorrectPool
-                  .filter((poolItem: any) => typeof poolItem === 'object' && poolItem.option)
-                  .map((poolItem: any) => ({ option: poolItem.option, whyIncorrect: poolItem.whyIncorrect }));
+              let 정답_1차 = q.정답_1차;
+              let 정답_2차 = q.정답_2차;
+              let isTwoStep = false;
+
+              if (정답_1차 && 정답_2차) {
+                isTwoStep = true;
+              } else if (q.정답_상세_내용) {
+                정답_1차 = q.핵심_키워드 || q.정답_상세_내용.split(/[\.。\n]/)[0].trim() || '';
+                정답_2차 = q.정답_상세_내용;
+                isTwoStep = true;
               }
-              
-              if (item.conceptBlock) {
-                conceptBlock = item.conceptBlock;
-              }
-              
-              if (item.originalExplanation) {
-                originalExplanation = item.originalExplanation;
-              }
-              
-              questions.push({
-                ...data.data,
-                conceptBlock,
-                originalExplanation,
-                incorrectPoolDetails,
-                // sourcePools에서 correctPool과 incorrectPool 추출
-                correctPool: data.data.sourcePools?.correctPool || item.correctPool || [],
-                incorrectPool: data.data.sourcePools?.incorrectPool || (item.incorrectPool ? item.incorrectPool.map((poolItem: any) => typeof poolItem === 'string' ? poolItem : poolItem.option) : [])
+
+              validSubjectives.push({
+                핵심_키워드: q.핵심_키워드,
+                문제_유형: q.문제_유형 || '개념 서술',
+                주관식_질문: q.주관식_질문,
+                정답_상세_내용: q.정답_상세_내용,
+                정답_1차,
+                정답_2차,
+                isTwoStep
               });
             }
-            
-            setGeneratedQuestions(questions);
-            setGeneratedQuestion(questions[questions.length - 1] || questions[0]); // 마지막 생성된 문제 또는 첫 번째 문제를 기본으로 표시
-            
-            // 퀴즈 정보 자동 설정
-            setQuizInfo(prev => ({
-              ...prev,
-              title: `${questions[0]?.topic || '문제'} 관련 문제 세트`,
-              description: `${questions.length}개의 문제가 생성되었습니다.`,
-              category: prev.category || '운동생리학'
-            }));
-            
+
+            if (validSubjectives.length > 0) {
+              setSubjectiveQuestions(validSubjectives);
+              // 주관식 카테고리 동기화 (객관식 카테고리와 동일하게 사용)
+              setSubjectiveInput(prev => ({
+                ...prev,
+                category: quizInfo.category || prev.category
+              }));
+            }
+          }
+
+          // 객관식 처리
+          if (objectiveBuffer.length > 0) {
+            if (items.length > 1) {
+              // 여러 문제 생성 모드
+              setBatchMode(true);
+
+              const currentCategory = quizInfo.category || '운동생리학';
+              const existingQuestions = loadQuestionsFromStorage(currentCategory);
+              const questions: GeneratedQuestion[] = [...existingQuestions];
+
+              for (const item of objectiveBuffer) {
+                const response = await fetch('http://localhost:5000/api/quiz-question-generator/generate', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(item)
+                });
+
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.message || `문제 생성 중 오류가 발생했습니다. (${item.id || item.topic})`);
+                }
+
+                const data = await response.json();
+
+                // 원본 JSON에서 상세 정보 추출
+                let incorrectPoolDetails: Array<{ option: string; whyIncorrect?: string }> = [];
+                let conceptBlock: any = undefined;
+                let originalExplanation: any = undefined;
+
+                if (item.incorrectPool && Array.isArray(item.incorrectPool)) {
+                  incorrectPoolDetails = item.incorrectPool
+                    .filter((poolItem: any) => typeof poolItem === 'object' && poolItem.option)
+                    .map((poolItem: any) => ({ option: poolItem.option, whyIncorrect: poolItem.whyIncorrect }));
+                }
+
+                if (item.conceptBlock) {
+                  conceptBlock = item.conceptBlock;
+                }
+
+                if (item.originalExplanation) {
+                  originalExplanation = item.originalExplanation;
+                }
+
+                questions.push({
+                  ...data.data,
+                  conceptBlock,
+                  originalExplanation,
+                  incorrectPoolDetails,
+                  correctPool: data.data.sourcePools?.correctPool || item.correctPool || [],
+                  incorrectPool: data.data.sourcePools?.incorrectPool || (item.incorrectPool ? item.incorrectPool.map((poolItem: any) => typeof poolItem === 'string' ? poolItem : poolItem.option) : [])
+                });
+              }
+
+              if (questions.length > 0) {
+                setGeneratedQuestions(questions);
+                setGeneratedQuestion(questions[questions.length - 1] || questions[0]);
+                setQuizInfo(prev => ({
+                  ...prev,
+                  title: `${questions[0]?.topic || '문제'} 관련 문제 세트`,
+                  description: `${questions.length}개의 문제가 생성되었습니다.`,
+                  category: prev.category || '운동생리학'
+                }));
+              }
+            } else {
+              // 단일 문제 생성
+              const target = objectiveBuffer[0];
+
+              if (batchMode) {
+                // 배치 모드에서 단일 문제 추가
+                const response = await fetch('http://localhost:5000/api/quiz-question-generator/generate', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(target)
+                });
+
+                if (!response.ok) {
+                  const error = await response.json();
+                  throw new Error(error.message || '문제 생성 중 오류가 발생했습니다.');
+                }
+
+                const data = await response.json();
+
+                let incorrectPoolDetails: Array<{ option: string; whyIncorrect?: string }> = [];
+                let conceptBlock: any = undefined;
+                let originalExplanation: any = undefined;
+
+                if (target.incorrectPool && Array.isArray(target.incorrectPool)) {
+                  incorrectPoolDetails = target.incorrectPool
+                    .filter((poolItem: any) => typeof poolItem === 'object' && poolItem.option)
+                    .map((poolItem: any) => ({ option: poolItem.option, whyIncorrect: poolItem.whyIncorrect }));
+                }
+
+                if (target.conceptBlock) {
+                  conceptBlock = target.conceptBlock;
+                }
+
+                if (target.originalExplanation) {
+                  originalExplanation = target.originalExplanation;
+                }
+
+                const newQuestion: GeneratedQuestion = {
+                  ...data.data,
+                  conceptBlock,
+                  originalExplanation,
+                  incorrectPoolDetails,
+                  correctPool: data.data.sourcePools?.correctPool || target.correctPool || [],
+                  incorrectPool: data.data.sourcePools?.incorrectPool || (target.incorrectPool ? target.incorrectPool.map((item: any) => typeof item === 'string' ? item : item.option) : [])
+                };
+
+                const currentCategory = quizInfo.category || '운동생리학';
+                const existingQuestions = loadQuestionsFromStorage(currentCategory);
+                const updatedQuestions = [...existingQuestions, newQuestion];
+                setGeneratedQuestions(updatedQuestions);
+                setGeneratedQuestion(newQuestion);
+                saveQuestionsToStorage(currentCategory, updatedQuestions);
+
+                setQuizInfo(prev => ({
+                  ...prev,
+                  title: `${updatedQuestions[0]?.topic || '문제'} 관련 문제 세트`,
+                  description: `${updatedQuestions.length}개의 문제가 생성되었습니다.`,
+                  category: currentCategory
+                }));
+
+                setJsonInput('');
+              } else {
+                // 단일 문제 생성 (기존 방식)
+                setBatchMode(false);
+                requestData = target;
+              }
+            }
+          }
+
+          // 결과 단계로 이동 (주관식/객관식 모두 고려)
+          if (objectiveBuffer.length > 0) {
             setStep('result');
             setLoading(false);
             return;
-          } else {
-            // 단일 문제 생성
-            if (batchMode) {
-              // 배치 모드에서 단일 문제 추가
-              const response = await fetch('http://localhost:5000/api/quiz-question-generator/generate', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(parsed)
-              });
-
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || '문제 생성 중 오류가 발생했습니다.');
-              }
-
-              const data = await response.json();
-              
-              // 원본 JSON에서 상세 정보 추출
-              let incorrectPoolDetails: Array<{ option: string; whyIncorrect?: string }> = [];
-              let conceptBlock: any = undefined;
-              let originalExplanation: any = undefined;
-              
-              if (parsed.incorrectPool && Array.isArray(parsed.incorrectPool)) {
-                incorrectPoolDetails = parsed.incorrectPool
-                  .filter((poolItem: any) => typeof poolItem === 'object' && poolItem.option)
-                  .map((poolItem: any) => ({ option: poolItem.option, whyIncorrect: poolItem.whyIncorrect }));
-              }
-              
-              if (parsed.conceptBlock) {
-                conceptBlock = parsed.conceptBlock;
-              }
-              
-              if (parsed.originalExplanation) {
-                originalExplanation = parsed.originalExplanation;
-              }
-              
-              const newQuestion: GeneratedQuestion = {
-                ...data.data,
-                conceptBlock,
-                originalExplanation,
-                incorrectPoolDetails,
-                // sourcePools에서 correctPool과 incorrectPool 추출
-                correctPool: data.data.sourcePools?.correctPool || parsed.correctPool || [],
-                incorrectPool: data.data.sourcePools?.incorrectPool || (parsed.incorrectPool ? parsed.incorrectPool.map((item: any) => typeof item === 'string' ? item : item.option) : [])
-              };
-              
-              // 기존 목록에 추가 (같은 카테고리인 경우)
-              const currentCategory = quizInfo.category || '운동생리학';
-              const existingQuestions = loadQuestionsFromStorage(currentCategory);
-              const updatedQuestions = [...existingQuestions, newQuestion];
-              setGeneratedQuestions(updatedQuestions);
-              setGeneratedQuestion(newQuestion);
-              
-              // localStorage에 저장
-              saveQuestionsToStorage(currentCategory, updatedQuestions);
-              
-              // 퀴즈 정보 자동 설정
-              setQuizInfo(prev => ({
-                ...prev,
-                title: `${updatedQuestions[0]?.topic || '문제'} 관련 문제 세트`,
-                description: `${updatedQuestions.length}개의 문제가 생성되었습니다.`,
-                category: currentCategory
-              }));
-              
-              // JSON 입력 초기화
-              setJsonInput('');
-              
-              setStep('result');
-              setLoading(false);
-              return;
-            } else {
-              // 단일 문제 생성 (기존 방식)
-              setBatchMode(false);
-              requestData = parsed;
-            }
+          }
+          if (subjectiveBuffer.length > 0) {
+            setMode('subjective');
+            setStep('result');
+            setLoading(false);
+            return;
           }
         } catch (error) {
           alert('JSON 형식이 올바르지 않습니다. JSON을 확인해주세요.');
@@ -645,54 +750,105 @@ export default function QuizQuestionGeneratorPage() {
         return;
       }
 
-      // JSON 입력 모드
-      if (subjectiveInputMode === 'json') {
-        try {
-          const parsed = JSON.parse(subjectiveJsonInput);
-          
-          // 배열인지 단일 객체인지 확인
-          const questionsArray = Array.isArray(parsed) ? parsed : [parsed];
-          
-          // JSON 형식 검증
-          const validQuestions: SubjectiveQuestion[] = [];
-          for (const q of questionsArray) {
-            if (!q.핵심_키워드 || !q.주관식_질문 || !q.정답_상세_내용) {
-              throw new Error('JSON 형식이 올바르지 않습니다. (필수 필드: 핵심_키워드, 주관식_질문, 정답_상세_내용)');
+      // JSON 입력만 사용
+      try {
+        const parsed = JSON.parse(subjectiveJsonInput);
+        
+        // 배열인지 단일 객체인지 확인
+        const questionsArray = Array.isArray(parsed) ? parsed : [parsed];
+        
+        // (신규) 대제목/중제목/세부_문항 스키마도 지원: 세부_문항을 평탄화하여 주관식 스키마로 변환
+        const flattenedQuestions: any[] = [];
+        for (const entry of questionsArray) {
+          if (entry && (Array.isArray(entry.세부_문항) || Array.isArray(entry.세_부문항))) {
+            const parentTitle = entry.대제목;
+            const parentType = entry.문제_유형;
+            const parentCategory = entry.과목명 || entry.category || entry.카테고리;
+            const subItems = entry.세부_문항 || entry.세_부문항;
+            for (const sub of subItems) {
+              const questionText = sub.주관식_질문 || sub.주관식_질움 || sub.질문;
+              const answerDetail = sub.정답_상세_내용 || sub.정답_2차 || sub.설명 || sub.정답;
+              const keyword = sub.핵심_키워드 || sub.target_중제목 || parentTitle;
+              
+              if (!keyword || !questionText || !answerDetail) {
+                // 필수 필드 누락 시 건너뜀 (검증 단계에서 전체 유효성 체크)
+                continue;
+              }
+              
+              flattenedQuestions.push({
+                핵심_키워드: keyword,
+                문제_유형: sub.문제_유형 || parentType || '개념 서술',
+                주관식_질문: questionText,
+                정답_상세_내용: answerDetail,
+                정답_1차: sub.정답_1차,
+                정답_2차: sub.정답_2차
+              });
             }
-            
-            const isTwoStep = !!(q.정답_1차 && q.정답_2차);
-            validQuestions.push({
-              핵심_키워드: q.핵심_키워드,
-              문제_유형: q.문제_유형 || '개념 서술',
-              주관식_질문: q.주관식_질문,
-              정답_상세_내용: q.정답_상세_내용,
-              정답_1차: q.정답_1차,
-              정답_2차: q.정답_2차,
-              isTwoStep: isTwoStep
-            });
+            // 과목명이 포함된 경우 주관식 카테고리를 우선 설정
+            if (parentCategory) {
+              setSubjectiveInput(prev => ({ ...prev, category: parentCategory }));
+            }
+          } else {
+            flattenedQuestions.push(entry);
           }
-          
-          if (validQuestions.length === 0) {
-            throw new Error('유효한 문제가 없습니다.');
-          }
-          
-          setSubjectiveQuestions(validQuestions);
-          setStep('result');
-          setLoading(false);
-          return;
-        } catch (error: any) {
-          if (error.message.includes('JSON 형식') || error.message.includes('유효한 문제')) {
-            throw error;
-          }
-          alert('JSON 형식이 올바르지 않습니다. JSON을 확인해주세요.');
-          setLoading(false);
-          return;
         }
-      }
+        
+        // JSON 형식 검증
+        const validQuestions: SubjectiveQuestion[] = [];
+        for (const q of flattenedQuestions) {
+          // 누락 필드 자동 보정
+          const filledQuestion = {
+            ...q,
+            주관식_질문: q.주관식_질문 || q.주관식_질움 || q.질문,
+            정답_상세_내용: q.정답_상세_내용 || q.정답_2차 || q.설명 || q.정답,
+          };
 
-      // 텍스트 분석 모드
-      if (!subjectiveInput.textbookContent.trim()) {
-        alert('교재 내용을 입력해주세요.');
+          if (!filledQuestion.핵심_키워드 || !filledQuestion.주관식_질문 || !filledQuestion.정답_상세_내용) {
+            throw new Error('JSON 형식이 올바르지 않습니다. (필수 필드: 핵심_키워드, 주관식_질문, 정답_상세_내용)');
+          }
+          
+          // 2단계 답변 처리: 정답_1차와 정답_2차가 모두 있으면 사용, 없으면 자동 생성
+          let 정답_1차 = filledQuestion.정답_1차;
+          let 정답_2차 = filledQuestion.정답_2차;
+          let isTwoStep = false;
+          
+          if (정답_1차 && 정답_2차) {
+            // 명시적으로 2단계 답변이 제공된 경우
+            isTwoStep = true;
+          } else if (filledQuestion.정답_상세_내용) {
+            // 기존 방식: 정답_상세_내용만 있는 경우 자동으로 2단계로 변환
+            // 1차 답변: 핵심_키워드 또는 정답_상세_내용의 첫 문장
+            정답_1차 = filledQuestion.핵심_키워드 || filledQuestion.정답_상세_내용.split(/[\.。\n]/)[0].trim() || '';
+            // 2차 답변: 정답_상세_내용 전체
+            정답_2차 = filledQuestion.정답_상세_내용;
+            isTwoStep = true;
+          }
+          
+          validQuestions.push({
+            핵심_키워드: filledQuestion.핵심_키워드,
+            문제_유형: filledQuestion.문제_유형 || '개념 서술',
+            주관식_질문: filledQuestion.주관식_질문,
+            정답_상세_내용: filledQuestion.정답_상세_내용,
+            정답_1차: 정답_1차,
+            정답_2차: 정답_2차,
+            isTwoStep: isTwoStep
+          });
+        }
+        
+        if (validQuestions.length === 0) {
+          throw new Error('유효한 문제가 없습니다.');
+        }
+        
+        setSubjectiveQuestions(validQuestions);
+        setStep('result');
+        setLoading(false);
+        return;
+      } catch (error: any) {
+        if (error.message.includes('JSON 형식') || error.message.includes('유효한 문제')) {
+          throw error;
+        }
+        alert('JSON 형식이 올바르지 않습니다. JSON을 확인해주세요.');
+        setLoading(false);
         return;
       }
 
@@ -729,8 +885,13 @@ export default function QuizQuestionGeneratorPage() {
         return;
       }
 
-      if (!subjectiveInput.category) {
-        alert('카테고리를 선택해주세요.');
+      // 직접 입력 카테고리 처리
+      const resolvedCategory = subjectiveInput.category === CUSTOM_CATEGORY_KEY
+        ? (customCategory || '').trim()
+        : subjectiveInput.category;
+
+      if (!resolvedCategory) {
+        alert('카테고리를 선택하거나 직접 입력해주세요.');
         return;
       }
 
@@ -753,10 +914,10 @@ export default function QuizQuestionGeneratorPage() {
             section: subjectiveInput.section,
             topic: subjectiveInput.topic
           })),
-          title: `${subjectiveInput.category} 관련 문제 세트`,
+          title: `${resolvedCategory} 관련 문제 세트`,
           description: `${subjectiveQuestions.length}개의 주관식 문제가 포함된 세트입니다.`,
-          category: subjectiveInput.category,
-          tags: [subjectiveInput.category, '주관식', '자동생성']
+          category: resolvedCategory,
+          tags: [resolvedCategory, '주관식', '자동생성']
         })
       });
 
@@ -874,85 +1035,67 @@ export default function QuizQuestionGeneratorPage() {
         <Card className="p-6">
           <h2 className="text-xl font-bold mb-4">주관식 문제 생성</h2>
           
-          {/* 입력 모드 선택 */}
-          <div className="mb-4 flex space-x-4">
-            <Button
-              onClick={() => setSubjectiveInputMode('text')}
-              variant={subjectiveInputMode === 'text' ? 'default' : 'outline'}
-            >
-              텍스트 분석
-            </Button>
-            <Button
-              onClick={() => setSubjectiveInputMode('json')}
-              variant={subjectiveInputMode === 'json' ? 'default' : 'outline'}
-            >
-              JSON 입력
-            </Button>
+          {/* JSON 전용 안내 */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              💡 <strong>JSON 전용:</strong> 주관식 문제를 JSON 배열 또는 단일 객체로 입력하세요.
+              <br />
+              <span className="text-xs text-blue-600">
+                예시: <code>[{'{'} "핵심_키워드": "...", "문제_유형": "...", "주관식_질문": "...", "정답_상세_내용": "..." {'}'}]</code>
+              </span>
+            </p>
           </div>
 
-          {subjectiveInputMode === 'json' && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                💡 <strong>JSON 형식:</strong> 주관식 문제를 JSON 배열 또는 단일 객체로 입력하세요.
-                <br />
-                <span className="text-xs text-blue-600">
-                  예시: <code>[{'{'} "핵심_키워드": "...", "문제_유형": "...", "주관식_질문": "...", "정답_상세_내용": "..." {'}'}]</code>
-                </span>
-              </p>
-            </div>
-          )}
-
-          {subjectiveInputMode === 'text' && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                💡 <strong>사용 방법:</strong> 교재의 텍스트 내용을 복사하여 붙여넣으세요.
-                <br />
-                <span className="text-xs text-blue-600">
-                  시스템이 자동으로 핵심 개념을 추출하여 주관식 문제를 생성합니다.
-                </span>
-              </p>
-            </div>
-          )}
-
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">카테고리 *</label>
-                <select
-                  className="w-full p-3 border rounded-lg"
-                  value={subjectiveInput.category}
-                  onChange={(e) => setSubjectiveInput(prev => ({ ...prev, category: e.target.value }))}
-                >
-                  {QUIZ_CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 객관식 문제와 같은 카테고리를 선택하면 한 과목에 함께 저장됩니다.
-                </p>
-              </div>
-              {subjectiveInputMode === 'text' && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">최소 문제 개수</label>
-                  <Input
-                    type="number"
-                    min="3"
-                    max="20"
-                    value={subjectiveInput.minQuestions}
-                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, minQuestions: parseInt(e.target.value) || 3 }))}
-                  />
+                  <label className="block text-sm font-medium mb-2">카테고리 *</label>
+                  <select
+                    className="w-full p-3 border rounded-lg"
+                    value={subjectiveInput.category || CUSTOM_CATEGORY_KEY}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === CUSTOM_CATEGORY_KEY) {
+                        setSubjectiveInput(prev => ({ ...prev, category: CUSTOM_CATEGORY_KEY }));
+                        setQuizInfo(prev => ({ ...prev, category: '' }));
+                        setCustomCategory('');
+                      } else {
+                        setSubjectiveInput(prev => ({ ...prev, category: val }));
+                        setQuizInfo(prev => ({ ...prev, category: val }));
+                        setCustomCategory('');
+                      }
+                    }}
+                  >
+                    {QUIZ_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value={CUSTOM_CATEGORY_KEY}>직접 입력</option>
+                  </select>
+                  {subjectiveInput.category === CUSTOM_CATEGORY_KEY && (
+                    <Input
+                      className="mt-2"
+                      placeholder="직접 입력할 카테고리"
+                      value={customCategory}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategory(val);
+                        setQuizInfo(prev => ({ ...prev, category: val }));
+                      }}
+                    />
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 객관식 문제와 같은 카테고리를 선택하거나 직접 입력할 수 있습니다.
+                  </p>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* JSON 입력 모드 */}
-            {subjectiveInputMode === 'json' ? (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium">JSON 입력 *</label>
-                  <Button
-                    onClick={() => {
-                      const example = `[
+            {/* JSON 입력 (전용) */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium">JSON 입력 *</label>
+                <Button
+                  onClick={() => {
+                    const example = `[
   {
     "핵심_키워드": "굴곡-신전운동",
     "문제_유형": "개념 서술",
@@ -968,77 +1111,37 @@ export default function QuizQuestionGeneratorPage() {
     "정답_상세_내용": "1급 지레: 힘점과 저항점 사이에 지지점이 위치하며, 균형과 안정성에 유리하다. 2급 지레: 저항점이 힘점과 지지점 사이에 위치하며, 작은 힘으로 큰 저항을 이길 수 있다. 3급 지레: 힘점이 저항점과 지지점 사이에 위치하며, 속도와 범위에 유리하다."
   }
 ]`;
-                      setSubjectiveJsonInput(example);
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    예시 불러오기
-                  </Button>
-                </div>
-                <textarea
-                  className="w-full p-3 border rounded-lg font-mono text-sm"
-                  rows={20}
-                  value={subjectiveJsonInput}
-                  onChange={(e) => setSubjectiveJsonInput(e.target.value)}
-                  placeholder="JSON 형식으로 주관식 문제를 입력하세요..."
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  입력된 글자 수: {subjectiveJsonInput.length}자
-                </p>
+                    setSubjectiveJsonInput(example);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  예시 불러오기
+                </Button>
               </div>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium mb-2">섹션/장 이름 (선택사항)</label>
-                  <Input
-                    value={subjectiveInput.section}
-                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, section: e.target.value }))}
-                    placeholder="예: 제1장 관절의 운동"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">소주제 (선택사항)</label>
-                  <Input
-                    value={subjectiveInput.topic}
-                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, topic: e.target.value }))}
-                    placeholder="예: 굴곡과 신전"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    교재 텍스트 내용 *
-                    <span className="ml-2 text-xs text-gray-500">(최소 200자 이상 권장)</span>
-                  </label>
-                  <textarea
-                    className="w-full p-3 border rounded-lg font-mono text-sm"
-                    rows={20}
-                    value={subjectiveInput.textbookContent}
-                    onChange={(e) => setSubjectiveInput(prev => ({ ...prev, textbookContent: e.target.value }))}
-                    placeholder="교재의 텍스트 내용을 여기에 붙여넣으세요..."
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    입력된 글자 수: {subjectiveInput.textbookContent.length}자
-                  </p>
-                </div>
-              </>
-            )}
+              <textarea
+                className="w-full p-3 border rounded-lg font-mono text-sm"
+                rows={20}
+                value={subjectiveJsonInput}
+                onChange={(e) => setSubjectiveJsonInput(e.target.value)}
+                placeholder="JSON 형식으로 주관식 문제를 입력하세요..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                입력된 글자 수: {subjectiveJsonInput.length}자
+              </p>
+            </div>
           </div>
           <Button
             onClick={handleGenerateSubjectiveQuestions}
             disabled={
               loading || 
-              (subjectiveInputMode === 'json' 
-                ? !subjectiveJsonInput.trim() || !subjectiveInput.category
-                : !subjectiveInput.textbookContent.trim() || !subjectiveInput.category)
+              !subjectiveJsonInput.trim() || !subjectiveInput.category
             }
             className="w-full mt-4"
           >
             {loading 
               ? '처리 중...' 
-              : subjectiveInputMode === 'json' 
-                ? 'JSON에서 문제 불러오기' 
-                : '주관식 문제 생성'}
+              : 'JSON에서 문제 불러오기'}
           </Button>
         </Card>
       )}
@@ -1093,6 +1196,47 @@ export default function QuizQuestionGeneratorPage() {
 
           {inputMode === 'json' ? (
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">카테고리 *</label>
+                  <select
+                    className="w-full p-3 border rounded-lg"
+                    value={quizInfo.category || CUSTOM_CATEGORY_KEY}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === CUSTOM_CATEGORY_KEY) {
+                        setQuizInfo(prev => ({ ...prev, category: '' }));
+                        setCustomCategory('');
+                      } else {
+                        setQuizInfo(prev => ({ ...prev, category: val }));
+                        setCustomCategory('');
+                      }
+                    }}
+                  >
+                    {QUIZ_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value={CUSTOM_CATEGORY_KEY}>직접 입력</option>
+                  </select>
+                  {(!quizInfo.category || quizInfo.category === CUSTOM_CATEGORY_KEY) && (
+                    <Input
+                      className="mt-2"
+                      placeholder="직접 입력할 카테고리"
+                      value={customCategory}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomCategory(val);
+                        setQuizInfo(prev => ({ ...prev, category: val }));
+                      }}
+                    />
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 주관식과 같은 카테고리를 선택하거나 직접 입력할 수 있습니다.
+                  </p>
+                </div>
+                <div></div>
+              </div>
+
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium">JSON 입력</label>
@@ -1665,7 +1809,7 @@ export default function QuizQuestionGeneratorPage() {
       )}
 
       {/* 주관식 문제 결과 표시 */}
-      {step === 'result' && mode === 'subjective' && subjectiveQuestions.length > 0 && (
+      {step === 'result' && subjectiveQuestions.length > 0 && (
         <div className="space-y-6">
           <Card className="p-6 bg-green-50 border-green-200">
             <div className="flex items-center justify-between mb-4">
